@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/ui/style"
 	"github.com/containers/podman-tui/ui/utils"
 	"github.com/gdamore/tcell/v2"
@@ -24,15 +25,16 @@ const (
 type SimpleInputDialog struct {
 	*tview.Box
 
-	height        int
-	layout        *tview.Flex
-	textview      *tview.TextView
-	input         *tview.InputField
-	form          *tview.Form
-	focusElement  int
-	display       bool
-	cancelHandler func()
-	selectHandler func()
+	height             int
+	layout             *tview.Flex
+	textview           *tview.TextView
+	input              *tview.InputField
+	form               *tview.Form
+	focusElement       int
+	display            bool
+	selectButtonLabel  string
+	cancelHandler      func()
+	selectHandler      func()
 }
 
 // NewSimpleInputDialog returns new input dialog primitive.
@@ -54,8 +56,8 @@ func NewSimpleInputDialog(text string) *SimpleInputDialog {
 	dialog.textview.SetBackgroundColor(bgColor)
 
 	dialog.form = tview.NewForm().
-		AddButton("Cancel", nil).
-		AddButton("Enter", nil).
+		AddButton(i18n.T("Cancel"), nil).
+		AddButton(i18n.T("Enter"), nil).
 		SetButtonsAlign(tview.AlignRight)
 	dialog.form.SetBackgroundColor(bgColor)
 	dialog.form.SetButtonBackgroundColor(style.ButtonBgColor)
@@ -113,18 +115,31 @@ func (d *SimpleInputDialog) SetDescription(text string) {
 }
 
 // SetSelectButtonLabel sets form select/enter button name.
-func (d *SimpleInputDialog) SetSelectButtonLabel(label string) {
-	if len(label) == 0 {
+func (d *SimpleInputDialog) SetSelectButtonLabel(labelKey string) {
+	if len(labelKey) == 0 {
 		return
 	}
 
-	button := d.form.GetButton(d.form.GetButtonCount() - 1)
-	buttonLabel := strings.ToUpper(label[0:1])
+	// Save the original label key for UpdateLanguage
+	d.selectButtonLabel = labelKey
 
-	if len(label) > 1 {
-		buttonLabel += label[1:]
+	// Translate the label
+	translatedLabel := i18n.T(labelKey)
+	
+	// Format: capitalize first letter only for ASCII characters
+	buttonLabel := translatedLabel
+	if len(translatedLabel) > 0 {
+		firstChar := translatedLabel[0]
+		// Only capitalize if it's a lowercase ASCII letter (a-z)
+		if firstChar >= 'a' && firstChar <= 'z' {
+			buttonLabel = strings.ToUpper(translatedLabel[0:1])
+			if len(translatedLabel) > 1 {
+				buttonLabel += translatedLabel[1:]
+			}
+		}
 	}
 
+	button := d.form.GetButton(d.form.GetButtonCount() - 1)
 	button.SetLabel(buttonLabel)
 }
 
@@ -312,4 +327,34 @@ func (d *SimpleInputDialog) setLayout(haveDesc bool) {
 	d.layout.SetBorder(true)
 	d.layout.SetBorderColor(style.DialogBorderColor)
 	d.layout.SetBackgroundColor(style.DialogBgColor)
+}
+
+// UpdateLanguage updates all labels to current language.
+func (d *SimpleInputDialog) UpdateLanguage() {
+	// Use saved button label or default to "Enter"
+	labelKey := "Enter"
+	if d.selectButtonLabel != "" {
+		labelKey = d.selectButtonLabel
+	}
+	
+	// Translate the label
+	translatedLabel := i18n.T(labelKey)
+	
+	// Format: capitalize first letter only for ASCII characters
+	formattedLabel := translatedLabel
+	if len(translatedLabel) > 0 {
+		firstChar := translatedLabel[0]
+		// Only capitalize if it's a lowercase ASCII letter (a-z)
+		if firstChar >= 'a' && firstChar <= 'z' {
+			formattedLabel = strings.ToUpper(translatedLabel[0:1])
+			if len(translatedLabel) > 1 {
+				formattedLabel += translatedLabel[1:]
+			}
+		}
+	}
+	
+	// Update form buttons
+	d.form.ClearButtons()
+	d.form.AddButton(i18n.T("Cancel"), d.cancelHandler)
+	d.form.AddButton(formattedLabel, d.selectHandler)
 }

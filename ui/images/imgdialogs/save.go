@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/pdcs/images"
 	"github.com/containers/podman-tui/ui/dialogs"
 	"github.com/containers/podman-tui/ui/style"
@@ -36,6 +37,7 @@ type ImageSaveDialog struct {
 	*tview.Box
 
 	layout                *tview.Flex
+	contentLayout         *tview.Flex // holds the main options layout
 	imageInfo             *tview.InputField
 	output                *tview.InputField
 	compress              *tview.Checkbox
@@ -65,14 +67,26 @@ func NewImageSaveDialog() *ImageSaveDialog {
 	fgColor := style.DialogFgColor
 	ddUnselectedStyle := style.DropDownUnselected
 	ddselectedStyle := style.DropDownSelected
-	labelWidth := 10
+	
+	// Calculate label width dynamically
+	labels := []string{
+		i18n.T("output:"),
+		i18n.T("compress:"),
+		i18n.T("format:"),
+	}
+	labelWidth := 0
+	for _, label := range labels {
+		if width := i18n.GetDisplayWidth(label); width > labelWidth {
+			labelWidth = width
+		}
+	}
 
 	// image info
-	imageInfoLabel := "IMAGE ID:"
+	imageInfoLabel := i18n.T("IMAGE ID:")
 
 	dialog.imageInfo.SetBackgroundColor(style.DialogBgColor)
 	dialog.imageInfo.SetLabel("[::b]" + imageInfoLabel)
-	dialog.imageInfo.SetLabelWidth(len(imageInfoLabel))
+	dialog.imageInfo.SetLabelWidth(i18n.GetDisplayWidth(imageInfoLabel))
 	dialog.imageInfo.SetFieldBackgroundColor(style.DialogBgColor)
 	dialog.imageInfo.SetLabelStyle(tcell.StyleDefault.
 		Background(style.DialogBorderColor).
@@ -80,27 +94,29 @@ func NewImageSaveDialog() *ImageSaveDialog {
 
 	// output
 	dialog.output.SetBackgroundColor(bgColor)
-	dialog.output.SetLabel(utils.StringToInputLabel("output:", labelWidth))
+	dialog.output.SetLabel(utils.StringToInputLabel(i18n.T("output:"), labelWidth))
 	dialog.output.SetFieldStyle(style.InputFieldStyle)
 	dialog.output.SetLabelStyle(style.InputLabelStyle)
 
 	// compress
+	compressLabel := i18n.T("compress:")
 	dialog.compress.SetBackgroundColor(bgColor)
 	dialog.compress.SetLabelColor(fgColor)
-	dialog.compress.SetLabel("compress:")
-	dialog.compress.SetLabelWidth(labelWidth)
+	dialog.compress.SetLabel(compressLabel)
+	dialog.compress.SetLabelWidth(i18n.GetDisplayWidth(compressLabel) + 1)
 	dialog.compress.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// format
+	formatLabel := i18n.T("format:")
 	dialog.format.SetBackgroundColor(bgColor)
 	dialog.format.SetLabelColor(fgColor)
-	dialog.format.SetLabel("format:")
-	dialog.format.SetLabelWidth(labelWidth)
+	dialog.format.SetLabel(formatLabel)
+	dialog.format.SetLabelWidth(i18n.GetDisplayWidth(formatLabel) + 1)
 	dialog.format.SetOptions([]string{
-		define.V2s2Archive,
-		define.V2s2ManifestDir,
-		define.OCIArchive,
-		define.OCIManifestDir,
+		i18n.T(define.V2s2Archive),
+		i18n.T(define.V2s2ManifestDir),
+		i18n.T(define.OCIArchive),
+		i18n.T(define.OCIManifestDir),
 	},
 		nil)
 	dialog.format.SetListStyles(ddUnselectedStyle, ddselectedStyle)
@@ -109,23 +125,30 @@ func NewImageSaveDialog() *ImageSaveDialog {
 	dialog.format.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// OciAcceptUncompressed
+	ociLabel := i18n.T("accept uncompressed (OCI images):")
 	dialog.ociAcceptUncompressed.SetBackgroundColor(bgColor)
 	dialog.ociAcceptUncompressed.SetLabelColor(fgColor)
-	dialog.ociAcceptUncompressed.SetLabel("accept uncompressed (OCI images): ")
+	dialog.ociAcceptUncompressed.SetLabel(ociLabel)
+	dialog.ociAcceptUncompressed.SetLabelWidth(i18n.GetDisplayWidth(ociLabel) + 1)
 	dialog.ociAcceptUncompressed.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// form
-	dialog.form.AddButton("Cancel", nil)
-	dialog.form.AddButton("Save", nil)
+	dialog.form.AddButton(i18n.T("Cancel"), nil)
+	dialog.form.AddButton(i18n.T("Save"), nil)
 	dialog.form.SetButtonsAlign(tview.AlignRight)
 	dialog.form.SetBackgroundColor(bgColor)
 	dialog.form.SetButtonBackgroundColor(style.ButtonBgColor)
 
 	// layout
+	compressWidth := i18n.GetDisplayWidth(compressLabel) + 5  //nolint:mnd
+	ociWidth := i18n.GetDisplayWidth(ociLabel) + 5            //nolint:mnd
+	
 	compressRow := tview.NewFlex().SetDirection(tview.FlexColumn)
 	compressRow.SetBackgroundColor(bgColor)
-	compressRow.AddItem(dialog.compress, 0, 1, true)
-	compressRow.AddItem(dialog.ociAcceptUncompressed, 0, 3, true) //nolint:mnd
+	compressRow.AddItem(dialog.compress, compressWidth, 0, true)
+	compressRow.AddItem(utils.EmptyBoxSpace(bgColor), 2, 0, false) //nolint:mnd
+	compressRow.AddItem(dialog.ociAcceptUncompressed, ociWidth, 0, true)
+	compressRow.AddItem(utils.EmptyBoxSpace(bgColor), 0, 1, false)
 
 	optionsLayout := tview.NewFlex().SetDirection(tview.FlexRow)
 	optionsLayout.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
@@ -137,18 +160,18 @@ func NewImageSaveDialog() *ImageSaveDialog {
 	optionsLayout.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
 	optionsLayout.AddItem(dialog.format, 0, 1, true)
 
-	mainOptsLayout := tview.NewFlex().SetDirection(tview.FlexColumn)
-	mainOptsLayout.SetBackgroundColor(bgColor)
-	mainOptsLayout.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
-	mainOptsLayout.AddItem(optionsLayout, 0, 1, true)
-	mainOptsLayout.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
+	dialog.contentLayout = tview.NewFlex().SetDirection(tview.FlexColumn)
+	dialog.contentLayout.SetBackgroundColor(bgColor)
+	dialog.contentLayout.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
+	dialog.contentLayout.AddItem(optionsLayout, 0, 1, true)
+	dialog.contentLayout.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
 
 	dialog.layout.SetDirection(tview.FlexRow)
 	dialog.layout.SetBackgroundColor(bgColor)
 	dialog.layout.SetBorder(true)
 	dialog.layout.SetBorderColor(style.DialogBorderColor)
-	dialog.layout.SetTitle("PODMAN IMAGE SAVE")
-	dialog.layout.AddItem(mainOptsLayout, 0, 1, true)
+	dialog.layout.SetTitle(i18n.T("PODMAN IMAGE SAVE"))
+	dialog.layout.AddItem(dialog.contentLayout, 0, 1, true)
 	dialog.layout.AddItem(dialog.form, dialogs.DialogFormHeight, 0, true)
 
 	return dialog
@@ -356,8 +379,15 @@ func (d *ImageSaveDialog) ImageSaveOptions() (images.ImageSaveOptions, error) {
 		OciAcceptUncompressedLayers: d.ociAcceptUncompressed.IsChecked(),
 	}
 
-	_, format := d.format.GetCurrentOption()
-	opts.Format = format
+	// Get format index and map to original format constant
+	formatIndex, _ := d.format.GetCurrentOption()
+	formats := []string{
+		define.V2s2Archive,
+		define.V2s2ManifestDir,
+		define.OCIArchive,
+		define.OCIManifestDir,
+	}
+	opts.Format = formats[formatIndex]
 
 	output := strings.TrimSpace(d.output.GetText())
 	if output == "" {
@@ -384,5 +414,101 @@ func (d *ImageSaveDialog) setFocusElement() {
 		d.focusElement = imageSaveFormatFocus
 	case imageSaveFormatFocus:
 		d.focusElement = imageSaveFormFocus
+	}
+}
+
+// UpdateLanguage updates all translatable text in the dialog.
+func (d *ImageSaveDialog) UpdateLanguage() {
+	bgColor := style.DialogBgColor
+	
+	// Update dialog title
+	d.layout.SetTitle(i18n.T("PODMAN IMAGE SAVE"))
+	
+	// Calculate label width dynamically
+	labels := []string{
+		i18n.T("output:"),
+		i18n.T("compress:"),
+		i18n.T("format:"),
+	}
+	labelWidth := 0
+	for _, label := range labels {
+		if width := i18n.GetDisplayWidth(label); width > labelWidth {
+			labelWidth = width
+		}
+	}
+	
+	// Update image ID label
+	imageInfoLabel := i18n.T("IMAGE ID:")
+	d.imageInfo.SetLabel("[::b]" + imageInfoLabel)
+	d.imageInfo.SetLabelWidth(i18n.GetDisplayWidth(imageInfoLabel))
+	
+	// Update field labels
+	d.output.SetLabel(utils.StringToInputLabel(i18n.T("output:"), labelWidth))
+	
+	compressLabel := i18n.T("compress:")
+	d.compress.SetLabel(compressLabel)
+	d.compress.SetLabelWidth(i18n.GetDisplayWidth(compressLabel) + 1)
+	
+	formatLabel := i18n.T("format:")
+	d.format.SetLabel(formatLabel)
+	d.format.SetLabelWidth(i18n.GetDisplayWidth(formatLabel) + 1)
+	
+	// Update format options
+	currentFormatIndex, _ := d.format.GetCurrentOption()
+	d.format.SetOptions([]string{
+		i18n.T(define.V2s2Archive),
+		i18n.T(define.V2s2ManifestDir),
+		i18n.T(define.OCIArchive),
+		i18n.T(define.OCIManifestDir),
+	}, nil)
+	d.format.SetCurrentOption(currentFormatIndex)
+	
+	ociLabel := i18n.T("accept uncompressed (OCI images):")
+	d.ociAcceptUncompressed.SetLabel(ociLabel)
+	d.ociAcceptUncompressed.SetLabelWidth(i18n.GetDisplayWidth(ociLabel) + 1)
+	
+	// Rebuild compress row with correct widths
+	compressWidth := i18n.GetDisplayWidth(compressLabel) + 5  //nolint:mnd
+	ociWidth := i18n.GetDisplayWidth(ociLabel) + 5            //nolint:mnd
+	
+	compressRow := tview.NewFlex().SetDirection(tview.FlexColumn)
+	compressRow.SetBackgroundColor(bgColor)
+	compressRow.AddItem(d.compress, compressWidth, 0, true)
+	compressRow.AddItem(utils.EmptyBoxSpace(bgColor), 2, 0, false) //nolint:mnd
+	compressRow.AddItem(d.ociAcceptUncompressed, ociWidth, 0, true)
+	compressRow.AddItem(utils.EmptyBoxSpace(bgColor), 0, 1, false)
+	
+	// Rebuild options layout
+	optionsLayout := tview.NewFlex().SetDirection(tview.FlexRow)
+	optionsLayout.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
+	optionsLayout.AddItem(d.imageInfo, 0, 1, true)
+	optionsLayout.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
+	optionsLayout.AddItem(d.output, 0, 1, true)
+	optionsLayout.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
+	optionsLayout.AddItem(compressRow, 0, 1, true)
+	optionsLayout.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
+	optionsLayout.AddItem(d.format, 0, 1, true)
+	
+	// Rebuild content layout
+	d.contentLayout.Clear()
+	d.contentLayout.SetBackgroundColor(bgColor)
+	d.contentLayout.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
+	d.contentLayout.AddItem(optionsLayout, 0, 1, true)
+	d.contentLayout.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
+	
+	// Update form buttons
+	d.form.ClearButtons()
+	d.form.AddButton(i18n.T("Cancel"), nil)
+	d.form.AddButton(i18n.T("Save"), nil)
+	
+	// Re-set button handlers
+	if d.cancelHandler != nil {
+		cancelButton := d.form.GetButton(d.form.GetButtonCount() - 2) //nolint:mnd
+		cancelButton.SetSelectedFunc(d.cancelHandler)
+	}
+	
+	if d.saveHandler != nil {
+		saveButton := d.form.GetButton(d.form.GetButtonCount() - 1)
+		saveButton.SetSelectedFunc(d.saveHandler)
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/ui/style"
 	"github.com/docker/go-units"
 	"github.com/rivo/tview"
@@ -37,12 +38,14 @@ func (vols *Volumes) refresh(_ int) {
 	rowIndex := 1
 	volList := vols.getData()
 
-	vols.table.SetTitle(fmt.Sprintf("[::b]%s[%d]", strings.ToUpper(vols.title), len(volList)))
+	translatedTitle := i18n.T(vols.title)
+	vols.table.SetTitle(fmt.Sprintf("[::b]%s[%d]", strings.ToUpper(translatedTitle), len(volList)))
 
 	for i := range volList {
 		volDriver := volList[i].Driver
 		volName := volList[i].Name
-		volCreatedAt := units.HumanDuration(time.Since(volList[i].CreatedAt)) + " ago"
+		duration := units.HumanDuration(time.Since(volList[i].CreatedAt))
+		volCreatedAt := i18n.TranslateTime(duration) + " " + i18n.T("ago")
 		volMountPoint := volList[i].Mountpoint
 
 		// driver name column

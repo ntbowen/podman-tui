@@ -3,6 +3,7 @@ package voldialogs
 import (
 	"strings"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/pdcs/volumes"
 	"github.com/containers/podman-tui/ui/dialogs"
 	"github.com/containers/podman-tui/ui/style"
@@ -58,35 +59,35 @@ func NewVolumeCreateDialog() *VolumeCreateDialog {
 	buttonBgColor := style.ButtonBgColor
 
 	// basic information setup page
-	basicInfoPageLabelWidth := 9
+	basicInfoPageLabelWidth := i18n.GetDisplayWidth(i18n.T("drivers:"))
 	// name field
 	volDialog.volumeNameField.SetBackgroundColor(bgColor)
-	volDialog.volumeNameField.SetLabel(utils.StringToInputLabel("name:", basicInfoPageLabelWidth))
+	volDialog.volumeNameField.SetLabel(utils.StringToInputLabel(i18n.T("name:"), basicInfoPageLabelWidth))
 	volDialog.volumeNameField.SetFieldStyle(style.InputFieldStyle)
 	volDialog.volumeNameField.SetLabelStyle(style.InputLabelStyle)
 
 	// labels field
 	volDialog.volumeLabelField.SetBackgroundColor(bgColor)
-	volDialog.volumeLabelField.SetLabel(utils.StringToInputLabel("labels:", basicInfoPageLabelWidth))
+	volDialog.volumeLabelField.SetLabel(utils.StringToInputLabel(i18n.T("labels:"), basicInfoPageLabelWidth))
 	volDialog.volumeLabelField.SetFieldStyle(style.InputFieldStyle)
 	volDialog.volumeLabelField.SetLabelStyle(style.InputLabelStyle)
 
 	// drivers
 	volDialog.volumeDriverField.SetBackgroundColor(bgColor)
-	volDialog.volumeDriverField.SetLabel(utils.StringToInputLabel("drivers:", basicInfoPageLabelWidth))
+	volDialog.volumeDriverField.SetLabel(utils.StringToInputLabel(i18n.T("drivers:"), basicInfoPageLabelWidth))
 	volDialog.volumeDriverField.SetFieldStyle(style.InputFieldStyle)
 	volDialog.volumeDriverField.SetLabelStyle(style.InputLabelStyle)
 
 	// drivers options
 	volDialog.volumeDriverOptionsField.SetBackgroundColor(bgColor)
-	volDialog.volumeDriverOptionsField.SetLabel(utils.StringToInputLabel("options:", basicInfoPageLabelWidth))
+	volDialog.volumeDriverOptionsField.SetLabel(utils.StringToInputLabel(i18n.T("options:"), basicInfoPageLabelWidth))
 	volDialog.volumeDriverOptionsField.SetFieldStyle(style.InputFieldStyle)
 	volDialog.volumeDriverOptionsField.SetLabelStyle(style.InputLabelStyle)
 
 	// form
 	volDialog.form.SetBackgroundColor(bgColor)
-	volDialog.form.AddButton("Cancel", nil)
-	volDialog.form.AddButton("Create", nil)
+	volDialog.form.AddButton(i18n.T("Cancel"), nil)
+	volDialog.form.AddButton(i18n.T("Create"), nil)
 	volDialog.form.SetButtonsAlign(tview.AlignRight)
 	volDialog.form.SetButtonBackgroundColor(buttonBgColor)
 
@@ -94,7 +95,7 @@ func NewVolumeCreateDialog() *VolumeCreateDialog {
 	volDialog.layout.SetBackgroundColor(bgColor)
 	volDialog.layout.SetBorder(true)
 	volDialog.layout.SetBorderColor(style.DialogBorderColor)
-	volDialog.layout.SetTitle("PODMAN VOLUME CREATE")
+	volDialog.layout.SetTitle(i18n.T("PODMAN VOLUME CREATE"))
 
 	return &volDialog
 }
@@ -350,4 +351,33 @@ func (d *VolumeCreateDialog) setupLayout() {
 
 	d.layout.AddItem(layout, 0, 1, true)
 	d.layout.AddItem(d.form, dialogs.DialogFormHeight, 0, true)
+}
+
+// UpdateLanguage updates all translatable text when language changes.
+func (d *VolumeCreateDialog) UpdateLanguage() {
+	// Update dialog title
+	d.layout.SetTitle(i18n.T("PODMAN VOLUME CREATE"))
+
+	// Update field labels
+	labelWidth := i18n.GetDisplayWidth(i18n.T("drivers:"))
+	d.volumeNameField.SetLabel(utils.StringToInputLabel(i18n.T("name:"), labelWidth))
+	d.volumeLabelField.SetLabel(utils.StringToInputLabel(i18n.T("labels:"), labelWidth))
+	d.volumeDriverField.SetLabel(utils.StringToInputLabel(i18n.T("drivers:"), labelWidth))
+	d.volumeDriverOptionsField.SetLabel(utils.StringToInputLabel(i18n.T("options:"), labelWidth))
+
+	// Update form buttons
+	d.form.ClearButtons()
+	d.form.AddButton(i18n.T("Cancel"), nil)
+	d.form.AddButton(i18n.T("Create"), nil)
+
+	// Re-set button handlers
+	if d.cancelHandler != nil {
+		cancelButton := d.form.GetButton(d.form.GetButtonCount() - 2) //nolint:mnd
+		cancelButton.SetSelectedFunc(d.cancelHandler)
+	}
+
+	if d.createHandler != nil {
+		enterButton := d.form.GetButton(d.form.GetButtonCount() - 1)
+		enterButton.SetSelectedFunc(d.createHandler)
+	}
 }

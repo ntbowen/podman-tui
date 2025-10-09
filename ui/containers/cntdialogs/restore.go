@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/containers/podman-tui/pdcs/containers"
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/ui/dialogs"
 	"github.com/containers/podman-tui/ui/style"
 	"github.com/containers/podman-tui/ui/utils"
@@ -36,12 +37,9 @@ const (
 	cntRestoreDialogChkGroupColTwoWidth   = 18
 	cntRestoreDialogChkGroupColThreeWidth = 20
 	cntRestoreDialogChkGroupColFourWidth  = 16
-	cntRestoreDialogMaxWidth              = cntRestoreDialogLabelWidth +
-		cntRestoreDialogChkGroupColTwoWidth +
-		cntRestoreDialogChkGroupColThreeWidth +
-		cntRestoreDialogChkGroupColFourWidth + (6 * cntRestoreDialogPadding) //nolint:mnd
-	cntRestoreDialogMaxHeight        = 17
-	cntRestoreDialogSingleFieldWidth = cntRestoreDialogMaxWidth -
+	cntRestoreDialogMaxWidth              = 88 // Optimized width for all languages after translation improvements
+	cntRestoreDialogMaxHeight             = 17
+	cntRestoreDialogSingleFieldWidth      = cntRestoreDialogMaxWidth -
 		cntRestoreDialogLabelWidth - (2 * cntRestoreDialogPadding) //nolint:mnd
 )
 
@@ -64,6 +62,8 @@ type ContainerRestoreDialog struct {
 	fileLocks       *tview.Checkbox
 	printStats      *tview.Checkbox
 	form            *tview.Form
+	row5            *tview.Flex
+	row6            *tview.Flex
 	display         bool
 	focusElement    int
 	restoreHandler  func()
@@ -96,8 +96,26 @@ func NewContainerRestoreDialog() *ContainerRestoreDialog {
 	ddUnselectedStyle := style.DropDownUnselected
 	ddselectedStyle := style.DropDownSelected
 
+	// Calculate dynamic checkbox column widths (minimal padding)
+	col1Width := i18n.CalcMaxWidth(
+		i18n.T("keep:"),
+		i18n.T("print Stats:"),
+	)
+	col2Width := i18n.CalcMaxWidth(
+		i18n.T("ignore static IP:"),
+		i18n.T("tcp established:"),
+	)
+	col3Width := i18n.CalcMaxWidth(
+		i18n.T("ignore static MAC:"),
+		i18n.T("ignore volumes:"),
+	)
+	col4Width := i18n.CalcMaxWidth(
+		i18n.T("file locks:"),
+		i18n.T("ignore rootfs:"),
+	)
+
 	// containers
-	containersLabel := fmt.Sprintf("[:#%x:b]CONTAINER ID:[:-:-]", style.DialogBorderColor.Hex())
+	containersLabel := fmt.Sprintf("[:#%x:b]%s[:-:-]", style.DialogBorderColor.Hex(), i18n.T("CONTAINER ID:"))
 
 	dialog.containers.SetLabel(containersLabel)
 	dialog.containers.SetLabelWidth(cntRestoreDialogLabelWidth)
@@ -111,7 +129,7 @@ func NewContainerRestoreDialog() *ContainerRestoreDialog {
 	dialog.containers.SetCurrentOption(0)
 
 	// pod
-	dialog.pods.SetLabel("pod:")
+	dialog.pods.SetLabel(i18n.T("pod:"))
 	dialog.pods.SetLabelWidth(cntRestoreDialogLabelWidth)
 	dialog.pods.SetFieldWidth(cntRestoreDialogSingleFieldWidth)
 	dialog.pods.SetBackgroundColor(bgColor)
@@ -125,106 +143,89 @@ func NewContainerRestoreDialog() *ContainerRestoreDialog {
 
 	// name
 	dialog.name.SetBackgroundColor(style.DialogBgColor)
-	dialog.name.SetLabel(utils.StringToInputLabel("name:", cntRestoreDialogLabelWidth))
+	dialog.name.SetLabel(i18n.PadToWidth(i18n.T("name:"), cntRestoreDialogLabelWidth))
 	dialog.name.SetFieldStyle(style.InputFieldStyle)
 	dialog.name.SetLabelStyle(style.InputLabelStyle)
 
 	// Publish ports
-	publishLabel := "publish:"
-	publishLabelWidth := len(publishLabel) + cntRestoreDialogPadding + 1
-	publishPortsLabel := fmt.Sprintf("%*s ",
-		publishLabelWidth, publishLabel)
-
 	dialog.publishPorts.SetBackgroundColor(style.DialogBgColor)
-	dialog.publishPorts.SetLabel(utils.StringToInputLabel(publishPortsLabel, cntRestoreDialogLabelWidth))
+	dialog.publishPorts.SetLabel(i18n.PadToWidth(i18n.T("publish:"), cntRestoreDialogLabelWidth))
 	dialog.publishPorts.SetFieldStyle(style.InputFieldStyle)
 	dialog.publishPorts.SetLabelStyle(style.InputLabelStyle)
 
 	// Import
 	dialog.importArchive.SetBackgroundColor(style.DialogBgColor)
-	dialog.importArchive.SetLabel(utils.StringToInputLabel("import:", cntRestoreDialogLabelWidth))
+	dialog.importArchive.SetLabel(i18n.PadToWidth(i18n.T("import:"), cntRestoreDialogLabelWidth))
 	dialog.importArchive.SetFieldStyle(style.InputFieldStyle)
 	dialog.importArchive.SetLabelStyle(style.InputLabelStyle)
 
 	// keep
-	dialog.keep.SetLabel("keep:")
-	dialog.keep.SetLabelWidth(cntRestoreDialogLabelWidth)
+	dialog.keep.SetLabel(i18n.T("keep:"))
+	dialog.keep.SetLabelWidth(col1Width)
 	dialog.keep.SetChecked(false)
 	dialog.keep.SetBackgroundColor(bgColor)
 	dialog.keep.SetLabelColor(fgColor)
 	dialog.keep.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// ignoreStaticIP
-	ignoreStaticIPLabel := fmt.Sprintf("%*s ",
-		cntRestoreDialogChkGroupColTwoWidth, "ignore static IP:")
-
-	dialog.ignoreStaticIP.SetLabel(ignoreStaticIPLabel)
+	dialog.ignoreStaticIP.SetLabel(i18n.T("ignore static IP:"))
+	dialog.ignoreStaticIP.SetLabelWidth(col2Width)
 	dialog.ignoreStaticIP.SetChecked(false)
 	dialog.ignoreStaticIP.SetBackgroundColor(bgColor)
 	dialog.ignoreStaticIP.SetLabelColor(fgColor)
 	dialog.ignoreStaticIP.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// ignoreStaticMAC
-	ignoreStaticMACLabel := fmt.Sprintf("%*s ",
-		cntRestoreDialogChkGroupColThreeWidth, "ignore static MAC:")
-
-	dialog.ignoreStaticMAC.SetLabel(ignoreStaticMACLabel)
+	dialog.ignoreStaticMAC.SetLabel(i18n.T("ignore static MAC:"))
+	dialog.ignoreStaticMAC.SetLabelWidth(col3Width)
 	dialog.ignoreStaticMAC.SetChecked(false)
 	dialog.ignoreStaticMAC.SetBackgroundColor(bgColor)
 	dialog.ignoreStaticMAC.SetLabelColor(fgColor)
 	dialog.ignoreStaticMAC.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// fileLocks
-	fileLocksLabel := fmt.Sprintf("%*s ",
-		cntRestoreDialogChkGroupColFourWidth, "file locks:")
-
-	dialog.fileLocks.SetLabel(fileLocksLabel)
+	dialog.fileLocks.SetLabel(i18n.T("file locks:"))
+	dialog.fileLocks.SetLabelWidth(col4Width)
 	dialog.fileLocks.SetChecked(false)
 	dialog.fileLocks.SetBackgroundColor(bgColor)
 	dialog.fileLocks.SetLabelColor(fgColor)
 	dialog.fileLocks.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// printStats
-	dialog.printStats.SetLabel("print Stats: ")
-	dialog.printStats.SetLabelWidth(cntRestoreDialogLabelWidth)
+	dialog.printStats.SetLabel(i18n.T("print Stats:"))
+	dialog.printStats.SetLabelWidth(col1Width)
 	dialog.printStats.SetChecked(false)
 	dialog.printStats.SetBackgroundColor(bgColor)
 	dialog.printStats.SetLabelColor(fgColor)
 	dialog.printStats.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// tcpEstablished
-	tcpEstablishedLabel := fmt.Sprintf("%*s ",
-		cntRestoreDialogChkGroupColTwoWidth, "tcp established:")
-
-	dialog.tcpEstablished.SetLabel(tcpEstablishedLabel)
+	dialog.tcpEstablished.SetLabel(i18n.T("tcp established:"))
+	dialog.tcpEstablished.SetLabelWidth(col2Width)
 	dialog.tcpEstablished.SetChecked(false)
 	dialog.tcpEstablished.SetBackgroundColor(bgColor)
 	dialog.tcpEstablished.SetLabelColor(fgColor)
 	dialog.tcpEstablished.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// ignoreVolumes
-	ignoreVolumesLabel := fmt.Sprintf("%*s ",
-		cntRestoreDialogChkGroupColThreeWidth, "ignore volumes:")
-
-	dialog.ignoreVolumes.SetLabel(ignoreVolumesLabel)
+	dialog.ignoreVolumes.SetLabel(i18n.T("ignore volumes:"))
+	dialog.ignoreVolumes.SetLabelWidth(col3Width)
 	dialog.ignoreVolumes.SetChecked(false)
 	dialog.ignoreVolumes.SetBackgroundColor(bgColor)
 	dialog.ignoreVolumes.SetLabelColor(fgColor)
 	dialog.ignoreVolumes.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// ignoreRootFS
-	ignoreRootFSLabel := fmt.Sprintf("%*s ",
-		cntRestoreDialogChkGroupColFourWidth, "ignore rootfs:")
-
-	dialog.ignoreRootFS.SetLabel(ignoreRootFSLabel)
+	dialog.ignoreRootFS.SetLabel(i18n.T("ignore rootfs:"))
+	dialog.ignoreRootFS.SetLabelWidth(col4Width)
 	dialog.ignoreRootFS.SetChecked(false)
 	dialog.ignoreRootFS.SetBackgroundColor(bgColor)
 	dialog.ignoreRootFS.SetLabelColor(fgColor)
 	dialog.ignoreRootFS.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// form
-	dialog.form.AddButton("Cancel", nil)
-	dialog.form.AddButton("Restore", nil)
+	dialog.form.AddButton(i18n.T("Cancel"), nil)
+	dialog.form.AddButton(i18n.T("Restore"), nil)
 	dialog.form.SetButtonsAlign(tview.AlignRight)
 	dialog.form.SetBackgroundColor(bgColor)
 	dialog.form.SetButtonBackgroundColor(style.ButtonBgColor)
@@ -242,6 +243,7 @@ func NewContainerRestoreDialog() *ContainerRestoreDialog {
 	// layout row #three
 	row := tview.NewFlex().SetDirection(tview.FlexColumn)
 	row.AddItem(dialog.name, 0, 1, true)
+	row.AddItem(utils.EmptyBoxSpace(bgColor), 2, 0, false)
 	row.AddItem(dialog.publishPorts, 0, 1, true)
 	layout.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
 	layout.AddItem(row, 0, 1, true)
@@ -251,40 +253,30 @@ func NewContainerRestoreDialog() *ContainerRestoreDialog {
 	layout.AddItem(dialog.importArchive, 0, 1, true)
 
 	// layout row #five
-	row = tview.NewFlex().SetDirection(tview.FlexColumn)
-
-	row.AddItem(dialog.keep,
-		cntRestoreDialogLabelWidth+cntRestoreDialogPadding,
-		0, true)
-	row.AddItem(dialog.ignoreStaticIP,
-		cntRestoreDialogChkGroupColTwoWidth+cntRestoreDialogPadding,
-		0, true)
-	row.AddItem(dialog.ignoreStaticMAC,
-		cntRestoreDialogChkGroupColThreeWidth+cntRestoreDialogPadding,
-		0, true)
-	row.AddItem(dialog.fileLocks,
-		cntRestoreDialogChkGroupColFourWidth+cntRestoreDialogPadding,
-		0, true)
+	dialog.row5 = tview.NewFlex().SetDirection(tview.FlexColumn)
+	dialog.row5.AddItem(dialog.keep, col1Width+3, 0, true)
+	dialog.row5.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
+	dialog.row5.AddItem(dialog.ignoreStaticIP, col2Width+3, 0, true)
+	dialog.row5.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
+	dialog.row5.AddItem(dialog.ignoreStaticMAC, col3Width+3, 0, true)
+	dialog.row5.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
+	dialog.row5.AddItem(dialog.fileLocks, col4Width+3, 0, true)
+	dialog.row5.AddItem(utils.EmptyBoxSpace(bgColor), 0, 1, false)
 	layout.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
-	layout.AddItem(row, 0, 1, true)
+	layout.AddItem(dialog.row5, 0, 1, true)
 
 	// layout row #six
-	row = tview.NewFlex().SetDirection(tview.FlexColumn)
-
-	row.AddItem(dialog.printStats,
-		cntRestoreDialogLabelWidth+cntRestoreDialogPadding,
-		0, true)
-	row.AddItem(dialog.tcpEstablished,
-		cntRestoreDialogChkGroupColTwoWidth+cntRestoreDialogPadding,
-		0, true)
-	row.AddItem(dialog.ignoreVolumes,
-		cntRestoreDialogChkGroupColThreeWidth+cntRestoreDialogPadding,
-		0, true)
-	row.AddItem(dialog.ignoreRootFS,
-		cntRestoreDialogChkGroupColFourWidth+cntRestoreDialogPadding,
-		0, true)
+	dialog.row6 = tview.NewFlex().SetDirection(tview.FlexColumn)
+	dialog.row6.AddItem(dialog.printStats, col1Width+3, 0, true)
+	dialog.row6.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
+	dialog.row6.AddItem(dialog.tcpEstablished, col2Width+3, 0, true)
+	dialog.row6.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
+	dialog.row6.AddItem(dialog.ignoreVolumes, col3Width+3, 0, true)
+	dialog.row6.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
+	dialog.row6.AddItem(dialog.ignoreRootFS, col4Width+3, 0, true)
+	dialog.row6.AddItem(utils.EmptyBoxSpace(bgColor), 0, 1, false)
 	layout.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
-	layout.AddItem(row, 0, 1, true)
+	layout.AddItem(dialog.row6, 0, 1, true)
 
 	mainOptsLayout := tview.NewFlex().SetDirection(tview.FlexColumn)
 
@@ -297,7 +289,7 @@ func NewContainerRestoreDialog() *ContainerRestoreDialog {
 	dialog.layout.SetBackgroundColor(bgColor)
 	dialog.layout.SetBorder(true)
 	dialog.layout.SetBorderColor(style.DialogBorderColor)
-	dialog.layout.SetTitle("PODMAN CONTAINER RESTORE")
+	dialog.layout.SetTitle(i18n.T("PODMAN CONTAINER RESTORE"))
 	dialog.layout.AddItem(mainOptsLayout, 0, 1, true)
 	dialog.layout.AddItem(dialog.form, dialogs.DialogFormHeight, 0, true)
 
@@ -555,4 +547,91 @@ func (d *ContainerRestoreDialog) getInnerPrimitives() []tview.Primitive {
 		d.ignoreRootFS,
 		d.form,
 	}
+}
+
+// UpdateLanguage updates all labels to current language.
+func (d *ContainerRestoreDialog) UpdateLanguage() {
+	bgColor := style.DialogBgColor
+	
+	// Update window title
+	d.layout.SetTitle(i18n.T("PODMAN CONTAINER RESTORE"))
+
+	// Update container ID label
+	containersLabel := fmt.Sprintf("[:#%x:b]%s[:-:-]", style.DialogBorderColor.Hex(), i18n.T("CONTAINER ID:"))
+	d.containers.SetLabel(containersLabel)
+
+	// Update field labels
+	d.pods.SetLabel(i18n.T("pod:"))
+	d.name.SetLabel(i18n.PadToWidth(i18n.T("name:"), cntRestoreDialogLabelWidth))
+	d.publishPorts.SetLabel(i18n.PadToWidth(i18n.T("publish:"), cntRestoreDialogLabelWidth))
+	d.importArchive.SetLabel(i18n.PadToWidth(i18n.T("import:"), cntRestoreDialogLabelWidth))
+	
+	// Calculate dynamic checkbox column widths (minimal padding)
+	col1Width := i18n.CalcMaxWidth(
+		i18n.T("keep:"),
+		i18n.T("print Stats:"),
+	)
+	col2Width := i18n.CalcMaxWidth(
+		i18n.T("ignore static IP:"),
+		i18n.T("tcp established:"),
+	)
+	col3Width := i18n.CalcMaxWidth(
+		i18n.T("ignore static MAC:"),
+		i18n.T("ignore volumes:"),
+	)
+	col4Width := i18n.CalcMaxWidth(
+		i18n.T("file locks:"),
+		i18n.T("ignore rootfs:"),
+	)
+	
+	// Update checkbox labels
+	d.keep.SetLabel(i18n.T("keep:"))
+	d.keep.SetLabelWidth(col1Width)
+	
+	d.ignoreStaticIP.SetLabel(i18n.T("ignore static IP:"))
+	d.ignoreStaticIP.SetLabelWidth(col2Width)
+	
+	d.ignoreStaticMAC.SetLabel(i18n.T("ignore static MAC:"))
+	d.ignoreStaticMAC.SetLabelWidth(col3Width)
+	
+	d.fileLocks.SetLabel(i18n.T("file locks:"))
+	d.fileLocks.SetLabelWidth(col4Width)
+	
+	d.printStats.SetLabel(i18n.T("print Stats:"))
+	d.printStats.SetLabelWidth(col1Width)
+	
+	d.tcpEstablished.SetLabel(i18n.T("tcp established:"))
+	d.tcpEstablished.SetLabelWidth(col2Width)
+	
+	d.ignoreVolumes.SetLabel(i18n.T("ignore volumes:"))
+	d.ignoreVolumes.SetLabelWidth(col3Width)
+	
+	d.ignoreRootFS.SetLabel(i18n.T("ignore rootfs:"))
+	d.ignoreRootFS.SetLabelWidth(col4Width)
+	
+	// Rebuild row5 and row6 with new column widths
+	d.row5.Clear()
+	d.row5.AddItem(d.keep, col1Width+3, 0, true)
+	d.row5.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
+	d.row5.AddItem(d.ignoreStaticIP, col2Width+3, 0, true)
+	d.row5.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
+	d.row5.AddItem(d.ignoreStaticMAC, col3Width+3, 0, true)
+	d.row5.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
+	d.row5.AddItem(d.fileLocks, col4Width+3, 0, true)
+	d.row5.AddItem(utils.EmptyBoxSpace(bgColor), 0, 1, false)
+	
+	d.row6.Clear()
+	d.row6.AddItem(d.printStats, col1Width+3, 0, true)
+	d.row6.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
+	d.row6.AddItem(d.tcpEstablished, col2Width+3, 0, true)
+	d.row6.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
+	d.row6.AddItem(d.ignoreVolumes, col3Width+3, 0, true)
+	d.row6.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
+	d.row6.AddItem(d.ignoreRootFS, col4Width+3, 0, true)
+	d.row6.AddItem(utils.EmptyBoxSpace(bgColor), 0, 1, false)
+	
+	// Update form buttons
+	d.form.ClearButtons()
+	d.form.AddButton(i18n.T("Cancel"), d.cancelHandler)
+	d.form.AddButton(i18n.T("Restore"), d.restoreHandler)
 }

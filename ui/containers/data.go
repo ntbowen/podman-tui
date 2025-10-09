@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/pdcs/containers"
 	putils "github.com/containers/podman-tui/pdcs/utils"
 	"github.com/containers/podman-tui/ui/style"
@@ -23,7 +24,6 @@ func (cnt *Containers) SortView(option string, ascending bool) {
 	defer cnt.containersList.mu.Unlock()
 
 	cnt.containersList.sortBy = option
-	cnt.containersList.ascending = ascending
 	sort.Sort(containerListSorted{cnt.containersList.report, option, ascending})
 }
 
@@ -32,7 +32,7 @@ func (cnt *Containers) UpdateData() {
 	cntList, err := containers.List()
 	if err != nil {
 		log.Error().Msgf("view: containers update %v", err)
-		cnt.errorDialog.SetText(fmt.Sprintf("%v", err))
+		cnt.errorDialog.SetText(err.Error())
 		cnt.errorDialog.Display()
 
 		return
@@ -42,7 +42,6 @@ func (cnt *Containers) UpdateData() {
 	defer cnt.containersList.mu.Unlock()
 
 	sort.Sort(containerListSorted{cntList, cnt.containersList.sortBy, cnt.containersList.ascending})
-
 	cnt.containersList.report = cntList
 }
 
@@ -94,14 +93,14 @@ func (con conReporter) state() string {
 	switch con.State {
 	case "running":
 		t := units.HumanDuration(time.Since(time.Unix(con.StartedAt, 0)))
-		state = "Up " + t + " ago"
+		state = i18n.T("Up") + " " + i18n.TranslateTime(t) + " " + i18n.T("ago")
 	case "configured":
-		state = "Created"
+		state = i18n.T("Created")
 	case "exited", "stopped":
 		t := units.HumanDuration(time.Since(time.Unix(con.ExitedAt, 0)))
-		state = fmt.Sprintf("Exited (%d) %s ago", con.ExitCode, t)
+		state = fmt.Sprintf("%s (%d) %s %s", i18n.T("Exited"), con.ExitCode, i18n.TranslateTime(t), i18n.T("ago"))
 	default:
-		state = con.State
+		state = i18n.T(con.State)
 	}
 
 	return state

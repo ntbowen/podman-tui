@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/pdcs/networks"
 	"github.com/containers/podman-tui/pdcs/pods"
 	"github.com/containers/podman-tui/ui/dialogs"
@@ -148,13 +149,13 @@ func NewPodCreateDialog() *PodCreateDialog {
 		namespacePage:    tview.NewFlex(),
 		form:             tview.NewForm(),
 		categoryLabels: []string{
-			"Basic Information",
-			"DNS Setup",
-			"Infra Setup",
-			"Networking",
-			"Security Options",
-			"Resource Settings",
-			"Namespace Options",
+			i18n.T("Basic Information"),
+			i18n.T("DNS Setup"),
+			i18n.T("Infra Setup"),
+			i18n.T("Networking"),
+			i18n.T("Security Options"),
+			i18n.T("Resource Settings"),
+			i18n.T("Namespace Options"),
 		},
 		activePageIndex:             0,
 		display:                     false,
@@ -211,8 +212,8 @@ func NewPodCreateDialog() *PodCreateDialog {
 
 	// form
 	podDialog.form.SetBackgroundColor(style.DialogBgColor)
-	podDialog.form.AddButton("Cancel", nil)
-	podDialog.form.AddButton("Create", nil)
+	podDialog.form.AddButton(i18n.T("Cancel"), nil)
+	podDialog.form.AddButton(i18n.T("Create"), nil)
 	podDialog.form.SetButtonsAlign(tview.AlignRight)
 	podDialog.form.SetButtonBackgroundColor(style.ButtonBgColor)
 
@@ -220,7 +221,7 @@ func NewPodCreateDialog() *PodCreateDialog {
 	podDialog.layout.SetBackgroundColor(style.DialogBgColor)
 	podDialog.layout.SetBorder(true)
 	podDialog.layout.SetBorderColor(style.DialogBorderColor)
-	podDialog.layout.SetTitle("PODMAN POD CREATE")
+	podDialog.layout.SetTitle(i18n.T("PODMAN POD CREATE"))
 	podDialog.layout.AddItem(podDialog.form, dialogs.DialogFormHeight, 0, true)
 
 	podDialog.setActiveCategory(0)
@@ -720,15 +721,30 @@ func (d *PodCreateDialog) setupLayout() {
 
 func (d *PodCreateDialog) setupBasicInfoUI() {
 	// basic information setup page
-	basicInfoPageLabelWidth := 12
+	nameLabel := i18n.T("name:")
+	noHostsLabel := i18n.T("no hosts")
+	labelsLabel := i18n.T("labels:")
+
+	// Calculate label width based on translated text
+	basicInfoPageLabelWidth := i18n.GetDisplayWidth(nameLabel)
+	if w := i18n.GetDisplayWidth(noHostsLabel); w > basicInfoPageLabelWidth {
+		basicInfoPageLabelWidth = w
+	}
+	if w := i18n.GetDisplayWidth(labelsLabel); w > basicInfoPageLabelWidth {
+		basicInfoPageLabelWidth = w
+	}
+	
+	// Add extra spacing for better alignment (especially for checkboxes)
+	basicInfoPageLabelWidth += 2
+
 	// name field
 	d.podNameField.SetBackgroundColor(style.DialogBgColor)
-	d.podNameField.SetLabel(utils.StringToInputLabel("name:", basicInfoPageLabelWidth))
+	d.podNameField.SetLabel(utils.StringToInputLabel(nameLabel, basicInfoPageLabelWidth))
 	d.podNameField.SetFieldStyle(style.InputFieldStyle)
 	d.podNameField.SetLabelStyle(style.InputLabelStyle)
 
 	// no hosts check box
-	d.podNoHostsCheckBox.SetLabel("no hosts")
+	d.podNoHostsCheckBox.SetLabel(noHostsLabel)
 	d.podNoHostsCheckBox.SetLabelWidth(basicInfoPageLabelWidth)
 	d.podNoHostsCheckBox.SetChecked(false)
 	d.podNoHostsCheckBox.SetBackgroundColor(style.DialogBgColor)
@@ -737,7 +753,7 @@ func (d *PodCreateDialog) setupBasicInfoUI() {
 
 	// labels field
 	d.podLabelsField.SetBackgroundColor(style.DialogBgColor)
-	d.podLabelsField.SetLabel(utils.StringToInputLabel("labels:", basicInfoPageLabelWidth))
+	d.podLabelsField.SetLabel(utils.StringToInputLabel(labelsLabel, basicInfoPageLabelWidth))
 	d.podLabelsField.SetFieldStyle(style.InputFieldStyle)
 	d.podLabelsField.SetLabelStyle(style.InputLabelStyle)
 
@@ -753,22 +769,34 @@ func (d *PodCreateDialog) setupBasicInfoUI() {
 
 func (d *PodCreateDialog) setupDNSSetupUI() {
 	// DNS setup page
-	dnsPageLabelWidth := 16
+	dnsServersLabel := i18n.T("dns servers:")
+	dnsOptionsLabel := i18n.T("dns options:")
+	searchDomainsLabel := i18n.T("search domains:")
+
+	// Calculate label width
+	dnsPageLabelWidth := i18n.GetDisplayWidth(dnsServersLabel)
+	if w := i18n.GetDisplayWidth(dnsOptionsLabel); w > dnsPageLabelWidth {
+		dnsPageLabelWidth = w
+	}
+	if w := i18n.GetDisplayWidth(searchDomainsLabel); w > dnsPageLabelWidth {
+		dnsPageLabelWidth = w
+	}
+
 	// DNS server field
 	d.podDNSServerField.SetBackgroundColor(style.DialogBgColor)
-	d.podDNSServerField.SetLabel(utils.StringToInputLabel("dns servers:", dnsPageLabelWidth))
+	d.podDNSServerField.SetLabel(utils.StringToInputLabel(dnsServersLabel, dnsPageLabelWidth))
 	d.podDNSServerField.SetFieldStyle(style.InputFieldStyle)
 	d.podDNSServerField.SetLabelStyle(style.InputLabelStyle)
 
 	// DNS options field
 	d.podDNSOptionsField.SetBackgroundColor(style.DialogBgColor)
-	d.podDNSOptionsField.SetLabel(utils.StringToInputLabel("dns options:", dnsPageLabelWidth))
+	d.podDNSOptionsField.SetLabel(utils.StringToInputLabel(dnsOptionsLabel, dnsPageLabelWidth))
 	d.podDNSOptionsField.SetFieldStyle(style.InputFieldStyle)
 	d.podDNSOptionsField.SetLabelStyle(style.InputLabelStyle)
 
 	// DNS search domains field
 	d.podDNSSearchDomaindField.SetBackgroundColor(style.DialogBgColor)
-	d.podDNSSearchDomaindField.SetLabel(utils.StringToInputLabel("search domains:", dnsPageLabelWidth))
+	d.podDNSSearchDomaindField.SetLabel(utils.StringToInputLabel(searchDomainsLabel, dnsPageLabelWidth))
 	d.podDNSSearchDomaindField.SetFieldStyle(style.InputFieldStyle)
 	d.podDNSSearchDomaindField.SetLabelStyle(style.InputLabelStyle)
 
@@ -784,9 +812,21 @@ func (d *PodCreateDialog) setupDNSSetupUI() {
 
 func (d *PodCreateDialog) setupInfraSetupUI() {
 	// infra page
-	infraPageLabelWidth := 15
+	infraLabel := i18n.T("infra")
+	infraCommandLabel := i18n.T("infra command:")
+	infraImageLabel := i18n.T("infra image:")
+
+	// Calculate label width
+	infraPageLabelWidth := i18n.GetDisplayWidth(infraLabel)
+	if w := i18n.GetDisplayWidth(infraCommandLabel); w > infraPageLabelWidth {
+		infraPageLabelWidth = w
+	}
+	if w := i18n.GetDisplayWidth(infraImageLabel); w > infraPageLabelWidth {
+		infraPageLabelWidth = w
+	}
+
 	// infra check box
-	d.podInfraCheckBox.SetLabel("infra")
+	d.podInfraCheckBox.SetLabel(infraLabel)
 	d.podInfraCheckBox.SetLabelWidth(infraPageLabelWidth)
 	d.podInfraCheckBox.SetChecked(true)
 	d.podInfraCheckBox.SetBackgroundColor(style.DialogBgColor)
@@ -795,13 +835,13 @@ func (d *PodCreateDialog) setupInfraSetupUI() {
 
 	// infra command field
 	d.podInfraCommandField.SetBackgroundColor(style.DialogBgColor)
-	d.podInfraCommandField.SetLabel(utils.StringToInputLabel("infra command:", infraPageLabelWidth))
+	d.podInfraCommandField.SetLabel(utils.StringToInputLabel(infraCommandLabel, infraPageLabelWidth))
 	d.podInfraCommandField.SetFieldStyle(style.InputFieldStyle)
 	d.podInfraCommandField.SetLabelStyle(style.InputLabelStyle)
 
 	// infra image field
 	d.podInfraImageField.SetBackgroundColor(style.DialogBgColor)
-	d.podInfraImageField.SetLabel(utils.StringToInputLabel("infra image:", infraPageLabelWidth))
+	d.podInfraImageField.SetLabel(utils.StringToInputLabel(infraImageLabel, infraPageLabelWidth))
 	d.podInfraImageField.SetFieldStyle(style.InputFieldStyle)
 	d.podInfraImageField.SetLabelStyle(style.InputLabelStyle)
 	d.podInfraImageField.SetText("")
@@ -818,33 +858,47 @@ func (d *PodCreateDialog) setupInfraSetupUI() {
 
 func (d *PodCreateDialog) setupNetworkingUI() {
 	// networking page
-	networkingLabelWidth := 17
+	hostnameLabel := i18n.T("hostname:")
+	ipAddressLabel := i18n.T("ip address:")
+	macAddressLabel := i18n.T("mac address:")
+	addHostLabel := i18n.T("add host:")
+	networkLabel := i18n.T("network:")
+	publishLabel := i18n.T("publish:")
+
+	// Calculate label width
+	networkingLabelWidth := i18n.GetDisplayWidth(hostnameLabel)
+	for _, label := range []string{ipAddressLabel, macAddressLabel, addHostLabel, networkLabel, publishLabel} {
+		if w := i18n.GetDisplayWidth(label); w > networkingLabelWidth {
+			networkingLabelWidth = w
+		}
+	}
+
 	// hostname field
 	d.podHostnameField.SetBackgroundColor(style.DialogBgColor)
-	d.podHostnameField.SetLabel(utils.StringToInputLabel("hostname:", networkingLabelWidth))
+	d.podHostnameField.SetLabel(utils.StringToInputLabel(hostnameLabel, networkingLabelWidth))
 	d.podHostnameField.SetFieldStyle(style.InputFieldStyle)
 	d.podHostnameField.SetLabelStyle(style.InputLabelStyle)
 
 	// ip address field
 	d.podIPAddressField.SetBackgroundColor(style.DialogBgColor)
-	d.podIPAddressField.SetLabel(utils.StringToInputLabel("ip address:", networkingLabelWidth))
+	d.podIPAddressField.SetLabel(utils.StringToInputLabel(ipAddressLabel, networkingLabelWidth))
 	d.podIPAddressField.SetFieldStyle(style.InputFieldStyle)
 	d.podIPAddressField.SetLabelStyle(style.InputLabelStyle)
 
 	// mac address field
 	d.podMacAddressField.SetBackgroundColor(style.DialogBgColor)
-	d.podMacAddressField.SetLabel(utils.StringToInputLabel("mac address:", networkingLabelWidth))
+	d.podMacAddressField.SetLabel(utils.StringToInputLabel(macAddressLabel, networkingLabelWidth))
 	d.podMacAddressField.SetFieldStyle(style.InputFieldStyle)
 	d.podMacAddressField.SetLabelStyle(style.InputLabelStyle)
 
 	// add host field
 	d.podAddHostField.SetBackgroundColor(style.DialogBgColor)
-	d.podAddHostField.SetLabel(utils.StringToInputLabel("add host:", networkingLabelWidth))
+	d.podAddHostField.SetLabel(utils.StringToInputLabel(addHostLabel, networkingLabelWidth))
 	d.podAddHostField.SetFieldStyle(style.InputFieldStyle)
 	d.podAddHostField.SetLabelStyle(style.InputLabelStyle)
 
 	// network field
-	d.podNetworkField.SetLabel("network:")
+	d.podNetworkField.SetLabel(networkLabel)
 	d.podNetworkField.SetLabelWidth(networkingLabelWidth)
 	d.podNetworkField.SetBackgroundColor(style.DialogBgColor)
 	d.podNetworkField.SetLabelColor(style.DialogFgColor)
@@ -854,7 +908,7 @@ func (d *PodCreateDialog) setupNetworkingUI() {
 
 	// publish field
 	d.podPublishField.SetBackgroundColor(style.DialogBgColor)
-	d.podPublishField.SetLabel(utils.StringToInputLabel("publish:", networkingLabelWidth))
+	d.podPublishField.SetLabel(utils.StringToInputLabel(publishLabel, networkingLabelWidth))
 	d.podPublishField.SetFieldStyle(style.InputFieldStyle)
 	d.podPublishField.SetLabelStyle(style.InputLabelStyle)
 
@@ -876,39 +930,53 @@ func (d *PodCreateDialog) setupNetworkingUI() {
 
 func (d *PodCreateDialog) setupSecurityOptionsUI() {
 	// security options
-	securityOptsPageLabelWidth := 10
+	labelLabel := i18n.T("label:")
+	apparmorLabel := i18n.T("apparmor:")
+	seccompLabel := i18n.T("seccomp:")
+	maskLabel := i18n.T("mask:")
+	unmaskLabel := i18n.T("unmask:")
+	noNewPrivLabel := i18n.T("no new privileges")
+
+	// Calculate label width
+	securityOptsPageLabelWidth := i18n.GetDisplayWidth(labelLabel)
+	for _, label := range []string{apparmorLabel, seccompLabel, maskLabel, unmaskLabel, noNewPrivLabel} {
+		if w := i18n.GetDisplayWidth(label); w > securityOptsPageLabelWidth {
+			securityOptsPageLabelWidth = w
+		}
+	}
+
 	// labels
 	d.podSelinuxLabelField.SetBackgroundColor(style.DialogBgColor)
-	d.podSelinuxLabelField.SetLabel(utils.StringToInputLabel("label:", securityOptsPageLabelWidth))
+	d.podSelinuxLabelField.SetLabel(utils.StringToInputLabel(labelLabel, securityOptsPageLabelWidth))
 	d.podSelinuxLabelField.SetFieldStyle(style.InputFieldStyle)
 	d.podSelinuxLabelField.SetLabelStyle(style.InputLabelStyle)
 
 	// apparmor
 	d.podApparmorField.SetBackgroundColor(style.DialogBgColor)
-	d.podApparmorField.SetLabel(utils.StringToInputLabel("apparmor:", securityOptsPageLabelWidth))
+	d.podApparmorField.SetLabel(utils.StringToInputLabel(apparmorLabel, securityOptsPageLabelWidth))
 	d.podApparmorField.SetFieldStyle(style.InputFieldStyle)
 	d.podApparmorField.SetLabelStyle(style.InputLabelStyle)
 
 	// seccomp
 	d.podSeccompField.SetBackgroundColor(style.DialogBgColor)
-	d.podSeccompField.SetLabel(utils.StringToInputLabel("seccomp:", securityOptsPageLabelWidth))
+	d.podSeccompField.SetLabel(utils.StringToInputLabel(seccompLabel, securityOptsPageLabelWidth))
 	d.podSeccompField.SetFieldStyle(style.InputFieldStyle)
 	d.podSeccompField.SetLabelStyle(style.InputLabelStyle)
 
 	// mask
 	d.podMaskField.SetBackgroundColor(style.DialogBgColor)
-	d.podMaskField.SetLabel(utils.StringToInputLabel("mask:", securityOptsPageLabelWidth))
+	d.podMaskField.SetLabel(utils.StringToInputLabel(maskLabel, securityOptsPageLabelWidth))
 	d.podMaskField.SetFieldStyle(style.InputFieldStyle)
 	d.podMaskField.SetLabelStyle(style.InputLabelStyle)
 
 	// unmask
 	d.podUnmaskField.SetBackgroundColor(style.DialogBgColor)
-	d.podUnmaskField.SetLabel(utils.StringToInputLabel("unmask:", securityOptsPageLabelWidth))
+	d.podUnmaskField.SetLabel(utils.StringToInputLabel(unmaskLabel, securityOptsPageLabelWidth))
 	d.podUnmaskField.SetFieldStyle(style.InputFieldStyle)
 	d.podUnmaskField.SetLabelStyle(style.InputLabelStyle)
 
 	// no new privileges
-	d.podNoNewPrivField.SetLabel("no new privileges ")
+	d.podNoNewPrivField.SetLabel(noNewPrivLabel)
 	d.podNoNewPrivField.SetBackgroundColor(style.DialogBgColor)
 	d.podNoNewPrivField.SetLabelColor(tcell.ColorWhite)
 	d.podNoNewPrivField.SetBackgroundColor(style.DialogBgColor)
@@ -932,36 +1000,51 @@ func (d *PodCreateDialog) setupSecurityOptionsUI() {
 }
 
 func (d *PodCreateDialog) setupResourceSettingsUI() {
-	// security options
-	labelWidth := 13
+	// Translate all labels
+	memoryLabel := i18n.T("memory:")
+	cpusLabel := i18n.T("cpus:")
+	cpusetCpusLabel := i18n.T("cpuset cpus:")
+	shmSizeLabel := i18n.T("shm size:")
+	shmSizeSystemdText := i18n.T("shm size systemd:")
+	memorySwapText := i18n.T("memory swap:")
+	cpuSharesText := i18n.T("cpu shares:")
+	cpusetMemsText := i18n.T("cpuset mems:")
+
+	// Calculate label widths
+	labelWidth := i18n.GetDisplayWidth(memoryLabel)
+	for _, label := range []string{cpusLabel, cpusetCpusLabel, shmSizeLabel} {
+		if w := i18n.GetDisplayWidth(label); w > labelWidth {
+			labelWidth = w
+		}
+	}
 
 	// memory
 	d.podMemoryField.SetBackgroundColor(style.DialogBgColor)
-	d.podMemoryField.SetLabel(utils.StringToInputLabel("memory:", labelWidth))
+	d.podMemoryField.SetLabel(utils.StringToInputLabel(memoryLabel, labelWidth))
 	d.podMemoryField.SetFieldStyle(style.InputFieldStyle)
 	d.podMemoryField.SetLabelStyle(style.InputLabelStyle)
 
 	// cpus
 	d.podCPUsField.SetBackgroundColor(style.DialogBgColor)
-	d.podCPUsField.SetLabel(utils.StringToInputLabel("cpus:", labelWidth))
+	d.podCPUsField.SetLabel(utils.StringToInputLabel(cpusLabel, labelWidth))
 	d.podCPUsField.SetFieldStyle(style.InputFieldStyle)
 	d.podCPUsField.SetLabelStyle(style.InputLabelStyle)
 
 	// cpuset cpus
 	d.podCPUSetCPUsField.SetBackgroundColor(style.DialogBgColor)
-	d.podCPUSetCPUsField.SetLabel(utils.StringToInputLabel("cpuset cpus:", labelWidth))
+	d.podCPUSetCPUsField.SetLabel(utils.StringToInputLabel(cpusetCpusLabel, labelWidth))
 	d.podCPUSetCPUsField.SetFieldStyle(style.InputFieldStyle)
 	d.podCPUSetCPUsField.SetLabelStyle(style.InputLabelStyle)
 
 	// shm size
 	d.podShmSizeField.SetBackgroundColor(style.DialogBgColor)
-	d.podShmSizeField.SetLabel(utils.StringToInputLabel("shm size:", labelWidth))
+	d.podShmSizeField.SetLabel(utils.StringToInputLabel(shmSizeLabel, labelWidth))
 	d.podShmSizeField.SetFieldStyle(style.InputFieldStyle)
 	d.podShmSizeField.SetLabelStyle(style.InputLabelStyle)
 
 	// shm size systemd
-	shmSizeSystemdLabel := "shm size systemd:"
-	shmSizeSystemdLabel = utils.StringToInputLabel(shmSizeSystemdLabel, len(shmSizeSystemdLabel)+1)
+	shmSizeSystemdWidth := i18n.GetDisplayWidth(shmSizeSystemdText) + 1
+	shmSizeSystemdLabel := utils.StringToInputLabel(shmSizeSystemdText, shmSizeSystemdWidth)
 
 	d.podShmSizeSystemdField.SetBackgroundColor(style.DialogBgColor)
 	d.podShmSizeSystemdField.SetLabel(shmSizeSystemdLabel)
@@ -969,8 +1052,8 @@ func (d *PodCreateDialog) setupResourceSettingsUI() {
 	d.podShmSizeSystemdField.SetLabelStyle(style.InputLabelStyle)
 
 	// memory swap
-	memorySwapLabel := utils.StringToInputLabel("memory swap:", labelWidth)
-	memorySwapLabel = utils.LabelWidthLeftPadding(memorySwapLabel, len(shmSizeSystemdLabel)-len(memorySwapLabel))
+	memorySwapLabel := utils.StringToInputLabel(memorySwapText, i18n.GetDisplayWidth(memorySwapText))
+	memorySwapLabel = utils.LabelWidthLeftPadding(memorySwapLabel, shmSizeSystemdWidth-i18n.GetDisplayWidth(memorySwapText))
 
 	d.podMemorySwapField.SetBackgroundColor(style.DialogBgColor)
 	d.podMemorySwapField.SetLabel(memorySwapLabel)
@@ -978,8 +1061,8 @@ func (d *PodCreateDialog) setupResourceSettingsUI() {
 	d.podMemorySwapField.SetLabelStyle(style.InputLabelStyle)
 
 	// cpu shares
-	cpuSharesLabel := utils.StringToInputLabel("cpu shares:", labelWidth)
-	cpuSharesLabel = utils.LabelWidthLeftPadding(cpuSharesLabel, len(shmSizeSystemdLabel)-len(cpuSharesLabel))
+	cpuSharesLabel := utils.StringToInputLabel(cpuSharesText, i18n.GetDisplayWidth(cpuSharesText))
+	cpuSharesLabel = utils.LabelWidthLeftPadding(cpuSharesLabel, shmSizeSystemdWidth-i18n.GetDisplayWidth(cpuSharesText))
 
 	d.podCPUSharesField.SetBackgroundColor(style.DialogBgColor)
 	d.podCPUSharesField.SetLabel(cpuSharesLabel)
@@ -987,8 +1070,8 @@ func (d *PodCreateDialog) setupResourceSettingsUI() {
 	d.podCPUSharesField.SetLabelStyle(style.InputLabelStyle)
 
 	// cpuset mems
-	cpusetMems := utils.StringToInputLabel("cpuset mems:", labelWidth)
-	cpusetMems = utils.LabelWidthLeftPadding(cpusetMems, len(shmSizeSystemdLabel)-len(cpusetMems))
+	cpusetMems := utils.StringToInputLabel(cpusetMemsText, i18n.GetDisplayWidth(cpusetMemsText))
+	cpusetMems = utils.LabelWidthLeftPadding(cpusetMems, shmSizeSystemdWidth-i18n.GetDisplayWidth(cpusetMemsText))
 
 	d.podCPUSetMemsField.SetBackgroundColor(style.DialogBgColor)
 	d.podCPUSetMemsField.SetLabel(cpusetMems)
@@ -1034,57 +1117,72 @@ func (d *PodCreateDialog) setupResourceSettingsUI() {
 
 func (d *PodCreateDialog) setupNamespaceOptionsUI() {
 	bgColor := style.DialogBgColor
-	namespacePageLabelWidth := 8
+
+	// Translate all labels
+	shareLabel := i18n.T("share:")
+	pidLabel := i18n.T("pid:")
+	usernsLabel := i18n.T("userns:")
+	utsLabel := i18n.T("uts:")
+	uidmapLabel := i18n.T("uidmap:")
+	gidmapLabel := i18n.T("gidmap:")
+	subuidnameLabel := i18n.T("subuidname:")
+	subgidnameLabel := i18n.T("subgidname:")
+
+	// Calculate label width
+	namespacePageLabelWidth := i18n.GetDisplayWidth(shareLabel)
+	for _, label := range []string{pidLabel, usernsLabel, utsLabel, uidmapLabel, gidmapLabel} {
+		if w := i18n.GetDisplayWidth(label); w > namespacePageLabelWidth {
+			namespacePageLabelWidth = w
+		}
+	}
 
 	// share
 	d.podNamespaceShareField.SetBackgroundColor(style.DialogBgColor)
-	d.podNamespaceShareField.SetLabel(utils.StringToInputLabel("share:", namespacePageLabelWidth))
+	d.podNamespaceShareField.SetLabel(utils.StringToInputLabel(shareLabel, namespacePageLabelWidth))
 	d.podNamespaceShareField.SetFieldStyle(style.InputFieldStyle)
 	d.podNamespaceShareField.SetLabelStyle(style.InputLabelStyle)
 
 	// pid
 	d.podNamespacePidField.SetBackgroundColor(style.DialogBgColor)
-	d.podNamespacePidField.SetLabel(utils.StringToInputLabel("pid:", namespacePageLabelWidth))
+	d.podNamespacePidField.SetLabel(utils.StringToInputLabel(pidLabel, namespacePageLabelWidth))
 	d.podNamespacePidField.SetFieldStyle(style.InputFieldStyle)
 	d.podNamespacePidField.SetLabelStyle(style.InputLabelStyle)
 
 	// userns
 	d.podNamespaceUserField.SetBackgroundColor(style.DialogBgColor)
-	d.podNamespaceUserField.SetLabel(utils.StringToInputLabel("userns:", namespacePageLabelWidth))
+	d.podNamespaceUserField.SetLabel(utils.StringToInputLabel(usernsLabel, namespacePageLabelWidth))
 	d.podNamespaceUserField.SetFieldStyle(style.InputFieldStyle)
 	d.podNamespaceUserField.SetLabelStyle(style.InputLabelStyle)
 
 	// uts
 	d.podNamespaceUtsField.SetBackgroundColor(style.DialogBgColor)
-	d.podNamespaceUtsField.SetLabel(utils.StringToInputLabel("uts:", namespacePageLabelWidth))
+	d.podNamespaceUtsField.SetLabel(utils.StringToInputLabel(utsLabel, namespacePageLabelWidth))
 	d.podNamespaceUtsField.SetFieldStyle(style.InputFieldStyle)
 	d.podNamespaceUtsField.SetLabelStyle(style.InputLabelStyle)
 
 	// uidmap
 	d.podNamespaceUidmapField.SetBackgroundColor(style.DialogBgColor)
-	d.podNamespaceUidmapField.SetLabel(utils.StringToInputLabel("uidmap:", namespacePageLabelWidth))
+	d.podNamespaceUidmapField.SetLabel(utils.StringToInputLabel(uidmapLabel, namespacePageLabelWidth))
 	d.podNamespaceUidmapField.SetFieldStyle(style.InputFieldStyle)
 	d.podNamespaceUidmapField.SetLabelStyle(style.InputLabelStyle)
 
 	// subuidname
-	subuidnameLabel := "subuidname:"
-
+	subuidnameWidth := i18n.GetDisplayWidth(subuidnameLabel) + 1
 	d.podNamespaceSubuidNameField.SetBackgroundColor(style.DialogBgColor)
-	d.podNamespaceSubuidNameField.SetLabel(utils.StringToInputLabel(subuidnameLabel, len(subuidnameLabel)+1))
+	d.podNamespaceSubuidNameField.SetLabel(utils.StringToInputLabel(subuidnameLabel, subuidnameWidth))
 	d.podNamespaceSubuidNameField.SetFieldStyle(style.InputFieldStyle)
 	d.podNamespaceSubuidNameField.SetLabelStyle(style.InputLabelStyle)
 
 	// gidmap
 	d.podNamespaceGidmapField.SetBackgroundColor(style.DialogBgColor)
-	d.podNamespaceGidmapField.SetLabel(utils.StringToInputLabel("gidmap:", namespacePageLabelWidth))
+	d.podNamespaceGidmapField.SetLabel(utils.StringToInputLabel(gidmapLabel, namespacePageLabelWidth))
 	d.podNamespaceGidmapField.SetFieldStyle(style.InputFieldStyle)
 	d.podNamespaceGidmapField.SetLabelStyle(style.InputLabelStyle)
 
 	// subgidname
-	subgidnameLabel := "subgidname:"
-
+	subgidnameWidth := i18n.GetDisplayWidth(subgidnameLabel) + 1
 	d.podNamespaceSubgidNameField.SetBackgroundColor(style.DialogBgColor)
-	d.podNamespaceSubgidNameField.SetLabel(utils.StringToInputLabel(subgidnameLabel, len(subgidnameLabel)+1))
+	d.podNamespaceSubgidNameField.SetLabel(utils.StringToInputLabel(subgidnameLabel, subgidnameWidth))
 	d.podNamespaceSubgidNameField.SetFieldStyle(style.InputFieldStyle)
 	d.podNamespaceSubgidNameField.SetLabelStyle(style.InputLabelStyle)
 

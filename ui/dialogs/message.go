@@ -3,6 +3,7 @@ package dialogs
 import (
 	"strings"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/ui/style"
 	"github.com/containers/podman-tui/ui/utils"
 	"github.com/gdamore/tcell/v2"
@@ -73,7 +74,7 @@ func NewMessageDialog(text string) *MessageDialog {
 	tlayout.AddItem(utils.EmptyBoxSpace(style.DialogBgColor), 1, 0, false)
 
 	dialog.form = tview.NewForm().
-		AddButton("Cancel", nil).
+		AddButton(i18n.T("Cancel"), nil).
 		SetButtonsAlign(tview.AlignRight)
 
 	dialog.form.SetBackgroundColor(style.DialogBgColor)
@@ -130,19 +131,19 @@ func (d *MessageDialog) SetText(headerType messageInfo, headerMessage string, me
 
 	switch headerType {
 	case MessageSystemInfo:
-		msgTypeLabel = "SERVICE NAME:"
+		msgTypeLabel = i18n.T("SERVICE NAME:")
 	case MessagePodInfo:
-		msgTypeLabel = "POD ID:"
+		msgTypeLabel = i18n.T("POD ID:")
 	case MessageContainerInfo:
-		msgTypeLabel = utils.ContainerIDLabel
+		msgTypeLabel = i18n.T("CONTAINER ID:")
 	case MessageVolumeInfo:
-		msgTypeLabel = "VOLUME NAME:"
+		msgTypeLabel = i18n.T("VOLUME NAME:")
 	case MessageImageInfo:
-		msgTypeLabel = "IMAGE ID:"
+		msgTypeLabel = i18n.T("IMAGE ID:")
 	case MessageNetworkInfo:
-		msgTypeLabel = "NETWORK ID:"
+		msgTypeLabel = i18n.T("NETWORK ID:")
 	case MessageSecretInfo:
-		msgTypeLabel = "SECRET ID:"
+		msgTypeLabel = i18n.T("SECRET ID:")
 	}
 
 	if msgTypeLabel != "" {
@@ -280,6 +281,15 @@ func (d *MessageDialog) InputHandler() func(event *tcell.EventKey, setFocus func
 // SetCancelFunc sets form cancel button selected function.
 func (d *MessageDialog) SetCancelFunc(handler func()) *MessageDialog {
 	d.cancelHandler = handler
+	cancelButton := d.form.GetButton(d.form.GetButtonCount() - 1)
+	cancelButton.SetSelectedFunc(handler)
 
 	return d
+}
+
+// UpdateLanguage updates all labels to current language.
+func (d *MessageDialog) UpdateLanguage() {
+	// Update form buttons
+	d.form.ClearButtons()
+	d.form.AddButton(i18n.T("Cancel"), d.cancelHandler)
 }

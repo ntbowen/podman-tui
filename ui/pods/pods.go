@@ -6,6 +6,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/ui/dialogs"
 	"github.com/containers/podman-tui/ui/pods/poddialogs"
 	"github.com/containers/podman-tui/ui/style"
@@ -24,18 +25,18 @@ const (
 )
 
 var (
-	errNoPodUnpause = errors.New("there is no pod to unpause")
-	errNoPodPause   = errors.New("there is no pod to pause")
-	errNoPodTop     = errors.New("there is no pod to display top")
-	errNoPodStop    = errors.New("there is no pod to stop")
-	errNoPodStart   = errors.New("there is no pod to start")
-	errNoPodRemove  = errors.New("there is no pod to remove")
-	errNoPodRestart = errors.New("there is no pod to restart")
-	errNoPodKill    = errors.New("there is no pod to kill")
-	errNoPodInspect = errors.New("there is no pod to display inspect")
-	errNoPodStat    = errors.New("there is no pod to display stats")
-	errPodRemove    = errors.New("remove error")
-	errPodPrune     = errors.New("prune error")
+	errNoPodUnpause = errors.New(i18n.T("there is no pod to unpause"))
+	errNoPodPause   = errors.New(i18n.T("there is no pod to pause"))
+	errNoPodTop     = errors.New(i18n.T("there is no pod to display top"))
+	errNoPodStop    = errors.New(i18n.T("there is no pod to stop"))
+	errNoPodStart   = errors.New(i18n.T("there is no pod to start"))
+	errNoPodRemove  = errors.New(i18n.T("there is no pod to remove"))
+	errNoPodRestart = errors.New(i18n.T("there is no pod to restart"))
+	errNoPodKill    = errors.New(i18n.T("there is no pod to kill"))
+	errNoPodInspect = errors.New(i18n.T("there is no pod to display inspect"))
+	errNoPodStat    = errors.New(i18n.T("there is no pod to display stats"))
+	errPodRemove    = errors.New(i18n.T("remove error"))
+	errPodPrune     = errors.New(i18n.T("prune error"))
 )
 
 // Pods implemnents the pods page primitive.
@@ -72,7 +73,7 @@ func NewPods() *Pods {
 	pods := &Pods{
 		Box:            tview.NewBox(),
 		title:          "pods",
-		headers:        []string{"pod id", "name", "status", "created", "infra id", "# of containers"},
+		headers:        []string{i18n.T("pod id"), i18n.T("name"), i18n.T("status"), i18n.T("created"), i18n.T("infra id"), i18n.T("# of containers")},
 		errorDialog:    dialogs.NewErrorDialog(),
 		confirmDialog:  dialogs.NewConfirmDialog(),
 		progressDialog: dialogs.NewProgressDialog(),
@@ -84,22 +85,10 @@ func NewPods() *Pods {
 		podsList:       podsListReport{sortBy: "created", ascending: true},
 	}
 
-	pods.topDialog.SetTitle("podman pod top")
+	pods.topDialog.SetTitle(i18n.T("podman pod top"))
 
-	pods.cmdDialog = dialogs.NewCommandDialog([][]string{
-		{"create", "create a new pod"},
-		{"inspect", "display information describing the selected pod"},
-		{"kill", "send SIGTERM signal to containers in the pod"},
-		{"pause", "pause  the selected pod"},
-		{"prune", "remove all stopped pods and their containers"},
-		{"restart", "restart  the selected pod"},
-		{"rm", "remove the selected pod"},
-		{"start", "start  the selected pod"},
-		{"stats", "display live stream of resource usage"},
-		{"stop", "stop the selected pod"},
-		{"top", "display the running processes of the pod's containers"},
-		{"unpause", "unpause  the selected pod"},
-	})
+	// Build command dialog with translations
+	pods.buildCommandDialog()
 
 	pods.table = tview.NewTable()
 	pods.table.SetBackgroundColor(style.BgColor)
@@ -120,15 +109,6 @@ func NewPods() *Pods {
 
 	pods.table.SetFixed(1, 1)
 	pods.table.SetSelectable(true, false)
-
-	// set command dialog functions
-	pods.cmdDialog.SetSelectedFunc(func() {
-		pods.cmdDialog.Hide()
-		pods.runCommand(pods.cmdDialog.GetSelectedItem())
-	})
-	pods.cmdDialog.SetCancelFunc(func() {
-		pods.cmdDialog.Hide()
-	})
 
 	// set message dialog functions
 	pods.messageDialog.SetCancelFunc(func() {
@@ -365,4 +345,141 @@ func (pods *Pods) getAllItemsForStats() []poddialogs.PodStatsDropDownOptions {
 	}
 
 	return items
+}
+
+// buildCommandDialog rebuilds the command dialog with translated strings
+func (pods *Pods) buildCommandDialog() {
+	if pods.cmdDialog != nil {
+		pods.cmdDialog.Hide()
+	}
+
+	// Translate both command names and descriptions
+	pods.cmdDialog = dialogs.NewCommandDialog([][]string{
+		{i18n.T("create"), i18n.T("create a new pod")},
+		{i18n.T("inspect"), i18n.T("display information describing the selected pod")},
+		{i18n.T("kill"), i18n.T("send SIGTERM signal to containers in the pod")},
+		{i18n.T("pause"), i18n.T("pause  the selected pod")},
+		{i18n.T("prune"), i18n.T("remove all stopped pods and their containers")},
+		{i18n.T("restart"), i18n.T("restart  the selected pod")},
+		{i18n.T("rm"), i18n.T("remove the selected pod")},
+		{i18n.T("start"), i18n.T("start  the selected pod")},
+		{i18n.T("stats"), i18n.T("display live stream of resource usage")},
+		{i18n.T("stop"), i18n.T("stop the selected pod")},
+		{i18n.T("top"), i18n.T("display the running processes of the pod's containers")},
+		{i18n.T("unpause"), i18n.T("unpause  the selected pod")},
+	})
+
+	pods.cmdDialog.SetSelectedFunc(func() {
+		pods.cmdDialog.Hide()
+		// Get translated command and map back to English for runCommand
+		translatedCmd := pods.cmdDialog.GetSelectedItem()
+		englishCmd := pods.getEnglishCommand(translatedCmd)
+		pods.runCommand(englishCmd)
+	})
+
+	pods.cmdDialog.SetCancelFunc(func() {
+		pods.cmdDialog.Hide()
+	})
+}
+
+// getEnglishCommand maps translated command back to English command key
+func (pods *Pods) getEnglishCommand(translatedCmd string) string {
+	// Create reverse mapping from translated to English
+	commandMap := map[string]string{
+		i18n.T("create"):  "create",
+		i18n.T("inspect"): "inspect",
+		i18n.T("kill"):    "kill",
+		i18n.T("pause"):   "pause",
+		i18n.T("prune"):   utils.PruneCommandLabel,
+		i18n.T("restart"): "restart",
+		i18n.T("rm"):      "rm",
+		i18n.T("start"):   "start",
+		i18n.T("stats"):   "stats",
+		i18n.T("stop"):    "stop",
+		i18n.T("top"):     "top",
+		i18n.T("unpause"): "unpause",
+	}
+
+	if englishCmd, exists := commandMap[translatedCmd]; exists {
+		return englishCmd
+	}
+
+	// Fallback to original if not found (for English or unknown commands)
+	return translatedCmd
+}
+
+// updateTableHeaders updates table headers with translated strings
+func (pods *Pods) updateTableHeaders() {
+	// Update header texts
+	pods.headers = []string{
+		i18n.T("pod id"),
+		i18n.T("name"),
+		i18n.T("status"),
+		i18n.T("created"),
+		i18n.T("infra id"),
+		i18n.T("# of containers"),
+	}
+
+	// Update table header cells
+	for i := range pods.headers {
+		header := fmt.Sprintf("[black::b]%s", strings.ToUpper(pods.headers[i])) //nolint:perfsprint
+		pods.table.GetCell(0, i).SetText(header)
+	}
+}
+
+// rebuildDialogs rebuilds all dialogs with translated strings
+func (pods *Pods) rebuildDialogs() {
+	// Rebuild create dialog
+	pods.createDialog = poddialogs.NewPodCreateDialog()
+	pods.createDialog.SetCancelFunc(func() {
+		pods.createDialog.Hide()
+	})
+	pods.createDialog.SetCreateFunc(func() {
+		pods.createDialog.Hide()
+		pods.create()
+	})
+
+	// Rebuild stats dialog
+	pods.statsDialog = poddialogs.NewPodStatsDialog()
+	pods.statsDialog.SetDoneFunc(pods.statsDialog.Hide)
+
+	// Rebuild confirm dialog
+	pods.confirmDialog = dialogs.NewConfirmDialog()
+	pods.confirmDialog.SetSelectedFunc(func() {
+		pods.confirmDialog.Hide()
+
+		switch pods.confirmData {
+		case utils.PruneCommandLabel:
+			pods.prune()
+		case "rm":
+			pods.remove()
+		}
+	})
+	pods.confirmDialog.SetCancelFunc(func() {
+		pods.confirmDialog.Hide()
+	})
+
+	// Rebuild message dialog
+	pods.messageDialog = dialogs.NewMessageDialog("")
+	pods.messageDialog.SetCancelFunc(pods.messageDialog.Hide)
+
+	// Rebuild error dialog
+	pods.errorDialog = dialogs.NewErrorDialog()
+
+	// Rebuild sort dialog
+	pods.sortDialog = dialogs.NewSortDialog(pods.headers, 1)
+	pods.sortDialog.SetCancelFunc(pods.sortDialog.Hide)
+	pods.sortDialog.SetSelectFunc(pods.SortView)
+
+	// Rebuild top dialog
+	pods.topDialog = dialogs.NewTopDialog()
+	pods.topDialog.SetTitle(i18n.T("podman pod top"))
+	pods.topDialog.SetCancelFunc(pods.topDialog.Hide)
+}
+
+// UpdateLanguage updates all UI elements after language change
+func (pods *Pods) UpdateLanguage() {
+	pods.buildCommandDialog()
+	pods.updateTableHeaders()
+	pods.rebuildDialogs()
 }

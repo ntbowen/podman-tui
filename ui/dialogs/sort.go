@@ -1,6 +1,7 @@
 package dialogs
 
 import (
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/ui/style"
 	"github.com/containers/podman-tui/ui/utils"
 	"github.com/gdamore/tcell/v2"
@@ -41,23 +42,24 @@ func NewSortDialog(options []string, defaultOption int) *SortDialog {
 		focusElement: sortDialogOptionsFocus,
 	}
 
-	sortOrder := "Sort order:"
+	sortOrder := i18n.T("Sort order:")
 	sd.sortOrder = tview.NewDropDown()
 	sd.sortOrder.SetLabel(sortOrder)
-	sd.sortOrder.SetLabelWidth(len(sortOrder) + 1)
+	sd.sortOrder.SetLabelWidth(i18n.GetDisplayWidth(sortOrder) + 1)
 	sd.sortOrder.SetTitleAlign(tview.AlignRight)
 	sd.sortOrder.SetLabelColor(style.DialogFgColor)
 	sd.sortOrder.SetBackgroundColor(style.DialogBgColor)
-	sd.sortOrder.SetOptions([]string{"ascending", "descending"}, nil)
+	sd.sortOrder.SetOptions([]string{i18n.T("ascending"), i18n.T("descending")}, nil)
 	sd.sortOrder.SetListStyles(style.DropDownUnselected, style.DropDownSelected)
 	sd.sortOrder.SetFocusedStyle(style.DropDownFocused)
 	sd.sortOrder.SetFieldBackgroundColor(style.FieldBackgroundColor)
 	sd.sortOrder.SetFieldWidth(sortDialogOptionsWidth)
 	sd.sortOrder.SetCurrentOption(0)
 
+	sortByLabel := i18n.T("Sort by:")
 	sd.sortBy = tview.NewDropDown()
-	sd.sortBy.SetLabel("Sort by:")
-	sd.sortBy.SetLabelWidth(len(sortOrder) + 1)
+	sd.sortBy.SetLabel(sortByLabel)
+	sd.sortBy.SetLabelWidth(i18n.GetDisplayWidth(sortByLabel) + 1)
 	sd.sortBy.SetTitleAlign(tview.AlignRight)
 	sd.sortBy.SetLabelColor(style.DialogFgColor)
 	sd.sortBy.SetBackgroundColor(style.DialogBgColor)
@@ -72,8 +74,8 @@ func NewSortDialog(options []string, defaultOption int) *SortDialog {
 	}
 
 	// form
-	sd.form.AddButton("Cancel", nil)
-	sd.form.AddButton(" Sort ", nil)
+	sd.form.AddButton(i18n.T("Cancel"), nil)
+	sd.form.AddButton(i18n.T(" Sort "), nil)
 	sd.form.SetButtonsAlign(tview.AlignRight)
 	sd.form.SetBackgroundColor(style.DialogBgColor)
 	sd.form.SetButtonBackgroundColor(style.ButtonBgColor)

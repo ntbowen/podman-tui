@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/ui/dialogs"
 	"github.com/containers/podman-tui/ui/style"
 	"github.com/containers/podman-tui/ui/utils"
@@ -52,11 +53,10 @@ func NewNetworkDisconnectDialog() *NetworkDisconnectDialog {
 	fgColor := style.DialogFgColor
 	ddUnselectedStyle := style.DropDownUnselected
 	ddselectedStyle := style.DropDownSelected
-	labelWidth := 12
 
 	// network input field
 	dialog.network.SetBackgroundColor(style.DialogBgColor)
-	dialog.network.SetLabel("[::b]NETWORK ID:")
+	dialog.network.SetLabel("[::b]" + i18n.T("NETWORK ID:"))
 	dialog.network.SetFieldBackgroundColor(style.DialogBgColor)
 	dialog.network.SetLabelStyle(tcell.StyleDefault.
 		Background(style.DialogBorderColor).
@@ -65,8 +65,8 @@ func NewNetworkDisconnectDialog() *NetworkDisconnectDialog {
 	// container drop down
 	dialog.container.SetBackgroundColor(bgColor)
 	dialog.container.SetLabelColor(fgColor)
-	dialog.container.SetLabel("container:")
-	dialog.container.SetLabelWidth(labelWidth)
+	dialog.container.SetLabel(i18n.T("container:"))
+	dialog.container.SetLabelWidth(i18n.GetDisplayWidth(i18n.T("container:")) + 1)
 	dialog.container.SetOptions([]string{""}, nil)
 	dialog.container.SetListStyles(ddUnselectedStyle, ddselectedStyle)
 	dialog.container.SetFocusedStyle(style.DropDownFocused)
@@ -75,8 +75,8 @@ func NewNetworkDisconnectDialog() *NetworkDisconnectDialog {
 	dialog.container.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// form
-	dialog.form.AddButton(" Cancel ", nil)
-	dialog.form.AddButton("Disconnect", nil)
+	dialog.form.AddButton(i18n.T("Cancel"), nil)
+	dialog.form.AddButton(i18n.T("Disconnect"), nil)
 	dialog.form.SetButtonsAlign(tview.AlignRight)
 	dialog.form.SetBackgroundColor(bgColor)
 	dialog.form.SetButtonBackgroundColor(style.ButtonBgColor)
@@ -100,7 +100,7 @@ func NewNetworkDisconnectDialog() *NetworkDisconnectDialog {
 	dialog.layout.SetBackgroundColor(bgColor)
 	dialog.layout.SetBorder(true)
 	dialog.layout.SetBorderColor(style.DialogBorderColor)
-	dialog.layout.SetTitle("PODMAN NETWORK DISCONNECT")
+	dialog.layout.SetTitle(i18n.T("PODMAN NETWORK DISCONNECT"))
 	dialog.layout.AddItem(mainOptsLayout, 0, 1, true)
 	dialog.layout.AddItem(dialog.form, dialogs.DialogFormHeight, 0, true)
 
@@ -285,5 +285,34 @@ func (d *NetworkDisconnectDialog) GetDisconnectOptions() (string, string) {
 func (d *NetworkDisconnectDialog) setFocusElement() {
 	if d.focusElement == netDisconnectContainerFocus {
 		d.focusElement = netConnectFormFocus
+	}
+}
+
+// UpdateLanguage updates all translatable text in the dialog.
+func (d *NetworkDisconnectDialog) UpdateLanguage() {
+	// Update dialog title
+	d.layout.SetTitle(i18n.T("PODMAN NETWORK DISCONNECT"))
+	
+	// Update network label
+	d.network.SetLabel("[::b]" + i18n.T("NETWORK ID:"))
+	
+	// Update field labels
+	d.container.SetLabel(i18n.T("container:"))
+	d.container.SetLabelWidth(i18n.GetDisplayWidth(i18n.T("container:")) + 1)
+	
+	// Update form buttons
+	d.form.ClearButtons()
+	d.form.AddButton(i18n.T("Cancel"), nil)
+	d.form.AddButton(i18n.T("Disconnect"), nil)
+	
+	// Re-set button handlers
+	if d.cancelHandler != nil {
+		cancelButton := d.form.GetButton(d.form.GetButtonCount() - 2) //nolint:mnd
+		cancelButton.SetSelectedFunc(d.cancelHandler)
+	}
+	
+	if d.disconnectHandler != nil {
+		disconnectButton := d.form.GetButton(d.form.GetButtonCount() - 1)
+		disconnectButton.SetSelectedFunc(d.disconnectHandler)
 	}
 }

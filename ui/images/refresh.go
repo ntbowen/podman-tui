@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/containers/podman-tui/i18n"
 	putils "github.com/containers/podman-tui/pdcs/utils"
 	"github.com/containers/podman-tui/ui/style"
 	"github.com/containers/podman-tui/ui/utils"
@@ -30,7 +31,7 @@ func (img *Images) refresh(_ int) {
 	rowIndex := 1
 	images := img.getData()
 
-	img.table.SetTitle(fmt.Sprintf("[::b]%s[%d]", strings.ToUpper(img.title), len(images)))
+	img.table.SetTitle(fmt.Sprintf("[::b]%s[%d]", strings.ToUpper(i18n.T(img.title)), len(images)))
 
 	for i := range images {
 		repo := images[i].Repository

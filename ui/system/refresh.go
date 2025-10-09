@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/ui/style"
 	"github.com/rivo/tview"
 )
@@ -79,6 +80,6 @@ func (sys *System) refresh(_ int) {
 }
 
 func (sys *System) updateConnTableTitle(total int) {
-	title := fmt.Sprintf("[::b]SYSTEM CONNECTIONS[%d]", total)
+	title := fmt.Sprintf("[::b]%s[%d]", i18n.T("SYSTEM CONNECTIONS"), total)
 	sys.connTable.SetTitle(title)
 }

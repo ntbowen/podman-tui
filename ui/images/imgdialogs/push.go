@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/pdcs/images"
 	"github.com/containers/podman-tui/ui/dialogs"
 	"github.com/containers/podman-tui/ui/style"
@@ -35,6 +36,7 @@ type ImagePushDialog struct {
 	*tview.Box
 
 	layout        *tview.Flex
+	contentLayout *tview.Flex // holds the main input layout
 	imageInfo     *tview.InputField
 	destination   *tview.InputField
 	compress      *tview.Checkbox
@@ -70,11 +72,25 @@ func NewImagePushDialog() *ImagePushDialog {
 	fgColor := style.DialogFgColor
 	ddUnselectedStyle := style.DropDownUnselected
 	ddselectedStyle := style.DropDownSelected
-	labelWidth := 13
+	
+	// Calculate label width dynamically based on translated text
+	labels := []string{
+		i18n.T("destination:"),
+		i18n.T("compress:"),
+		i18n.T("authfile:"),
+		i18n.T("username:"),
+	}
+	labelWidth := 0
+	for _, label := range labels {
+		if width := i18n.GetDisplayWidth(label); width > labelWidth {
+			labelWidth = width
+		}
+	}
 
 	// image info field
+	imageIDLabel := i18n.T("IMAGE ID:")
 	dialog.imageInfo.SetBackgroundColor(style.DialogBgColor)
-	dialog.imageInfo.SetLabel("[::b]IMAGE ID:")
+	dialog.imageInfo.SetLabel("[::b]" + imageIDLabel)
 	dialog.imageInfo.SetFieldBackgroundColor(style.DialogBgColor)
 	dialog.imageInfo.SetLabelStyle(tcell.StyleDefault.
 		Background(style.DialogBorderColor).
@@ -82,23 +98,24 @@ func NewImagePushDialog() *ImagePushDialog {
 
 	// destination input field
 	dialog.destination.SetBackgroundColor(bgColor)
-	dialog.destination.SetLabel(utils.StringToInputLabel("destination:", labelWidth))
+	dialog.destination.SetLabel(utils.StringToInputLabel(i18n.T("destination:"), labelWidth))
 	dialog.destination.SetFieldStyle(style.InputFieldStyle)
 	dialog.destination.SetLabelStyle(style.InputLabelStyle)
 
 	// compress checkbox
+	compressLabel := i18n.T("compress:")
 	dialog.compress.SetBackgroundColor(bgColor)
 	dialog.compress.SetLabelColor(fgColor)
-	dialog.compress.SetLabel("compress:")
-	dialog.compress.SetLabelWidth(labelWidth)
+	dialog.compress.SetLabel(compressLabel)
+	dialog.compress.SetLabelWidth(i18n.GetDisplayWidth(compressLabel) + 1)
 	dialog.compress.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// format dropdown
-	formatLabel := "format:"
+	formatLabel := i18n.T("format:")
 	dialog.format.SetLabel(formatLabel)
 	dialog.format.SetTitleAlign(tview.AlignRight)
 	dialog.format.SetLabelColor(fgColor)
-	dialog.format.SetLabelWidth(len(formatLabel) + 1)
+	dialog.format.SetLabelWidth(i18n.GetDisplayWidth(formatLabel) + 1)
 	dialog.format.SetBackgroundColor(bgColor)
 	dialog.format.SetOptions([]string{
 		"oci",
@@ -111,50 +128,55 @@ func NewImagePushDialog() *ImagePushDialog {
 	dialog.format.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// skipTLSVerify checkbox
-	skipTLSVerifyLabel := "skip tls verify:"
+	skipTLSVerifyLabel := i18n.T("skip tls verify:")
 
 	dialog.skipTLSVerify.SetBackgroundColor(bgColor)
 	dialog.skipTLSVerify.SetLabelColor(fgColor)
 	dialog.skipTLSVerify.SetLabel(skipTLSVerifyLabel)
-	dialog.skipTLSVerify.SetLabelWidth(len(skipTLSVerifyLabel) + 1)
+	dialog.skipTLSVerify.SetLabelWidth(i18n.GetDisplayWidth(skipTLSVerifyLabel) + 1)
 	dialog.skipTLSVerify.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// authfile input field
 	dialog.authFile.SetBackgroundColor(bgColor)
-	dialog.authFile.SetLabel(utils.StringToInputLabel("authfile:", labelWidth))
+	dialog.authFile.SetLabel(utils.StringToInputLabel(i18n.T("authfile:"), labelWidth))
 	dialog.authFile.SetFieldStyle(style.InputFieldStyle)
 	dialog.authFile.SetLabelStyle(style.InputLabelStyle)
 
 	// username input field
 	dialog.username.SetBackgroundColor(bgColor)
-	dialog.username.SetLabel(utils.StringToInputLabel("username:", labelWidth))
+	dialog.username.SetLabel(utils.StringToInputLabel(i18n.T("username:"), labelWidth))
 	dialog.username.SetFieldStyle(style.InputFieldStyle)
 	dialog.username.SetLabelStyle(style.InputLabelStyle)
 
 	// password input field
-	passwordLabel := "password:"
+	passwordLabel := i18n.T("password:")
 
 	dialog.password.SetBackgroundColor(bgColor)
-	dialog.password.SetLabel(utils.StringToInputLabel(passwordLabel, len(passwordLabel)+1))
+	dialog.password.SetLabel(utils.StringToInputLabel(passwordLabel, i18n.GetDisplayWidth(passwordLabel)+1))
 	dialog.password.SetFieldStyle(style.InputFieldStyle)
 	dialog.password.SetLabelStyle(style.InputLabelStyle)
 	dialog.password.SetMaskCharacter('*')
 
 	// form
-	dialog.form.AddButton("Cancel", nil)
-	dialog.form.AddButton("Push", nil)
+	dialog.form.AddButton(i18n.T("Cancel"), nil)
+	dialog.form.AddButton(i18n.T("Push"), nil)
 	dialog.form.SetButtonsAlign(tview.AlignRight)
 	dialog.form.SetBackgroundColor(bgColor)
 	dialog.form.SetButtonBackgroundColor(style.ButtonBgColor)
 
 	// layout
 	// dropdowns and checkbox row layour
+	compressWidth := i18n.GetDisplayWidth(i18n.T("compress:")) + 5  //nolint:mnd
+	formatWidth := i18n.GetDisplayWidth(formatLabel) + 10           //nolint:mnd
+	skipTLSWidth := i18n.GetDisplayWidth(skipTLSVerifyLabel) + 5    //nolint:mnd
+	
 	dcLayout := tview.NewFlex().SetDirection(tview.FlexColumn)
-	dcLayout.AddItem(dialog.compress, labelWidth+1, 1, true)
+	dcLayout.AddItem(dialog.compress, compressWidth, 0, true)
 	dcLayout.AddItem(utils.EmptyBoxSpace(bgColor), 2, 0, false)  //nolint:mnd
-	dcLayout.AddItem(dialog.format, len(formatLabel)+5, 0, true) //nolint:mnd
+	dcLayout.AddItem(dialog.format, formatWidth, 0, true)
 	dcLayout.AddItem(utils.EmptyBoxSpace(bgColor), 2, 0, false)  //nolint:mnd
-	dcLayout.AddItem(dialog.skipTLSVerify, 0, 1, true)
+	dcLayout.AddItem(dialog.skipTLSVerify, skipTLSWidth, 0, true)
+	dcLayout.AddItem(utils.EmptyBoxSpace(bgColor), 0, 1, false)
 
 	// username and password row layout
 	userPassLayout := tview.NewFlex().SetDirection(tview.FlexColumn)
@@ -174,18 +196,18 @@ func NewImagePushDialog() *ImagePushDialog {
 	layout.AddItem(utils.EmptyBoxSpace(bgColor), 0, 1, false)
 	layout.AddItem(dialog.authFile, 0, 1, true)
 
-	inputLayout := tview.NewFlex().SetDirection(tview.FlexColumn)
-	inputLayout.SetBackgroundColor(bgColor)
-	inputLayout.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
-	inputLayout.AddItem(layout, 0, 1, true)
-	inputLayout.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
+	dialog.contentLayout = tview.NewFlex().SetDirection(tview.FlexColumn)
+	dialog.contentLayout.SetBackgroundColor(bgColor)
+	dialog.contentLayout.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
+	dialog.contentLayout.AddItem(layout, 0, 1, true)
+	dialog.contentLayout.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
 
 	dialog.layout.SetDirection(tview.FlexRow)
 	dialog.layout.SetBackgroundColor(bgColor)
 	dialog.layout.SetBorder(true)
 	dialog.layout.SetBorderColor(style.DialogBorderColor)
-	dialog.layout.SetTitle("PODMAN IMAGE PUSH")
-	dialog.layout.AddItem(inputLayout, 0, 1, true)
+	dialog.layout.SetTitle(i18n.T("PODMAN IMAGE PUSH"))
+	dialog.layout.AddItem(dialog.contentLayout, 0, 1, true)
 	dialog.layout.AddItem(dialog.form, dialogs.DialogFormHeight, 0, true)
 
 	dialog.Hide()
@@ -454,5 +476,107 @@ func (d *ImagePushDialog) setFocusElement() {
 		d.focusElement = imagePushAuthFileFocus
 	case imagePushAuthFileFocus:
 		d.focusElement = imagePushFormFocus
+	}
+}
+
+// UpdateLanguage updates all translatable text in the dialog.
+func (d *ImagePushDialog) UpdateLanguage() {
+	bgColor := style.DialogBgColor
+	
+	// Update dialog title
+	d.layout.SetTitle(i18n.T("PODMAN IMAGE PUSH"))
+	
+	// Calculate label width dynamically
+	labels := []string{
+		i18n.T("destination:"),
+		i18n.T("compress:"),
+		i18n.T("authfile:"),
+		i18n.T("username:"),
+	}
+	labelWidth := 0
+	for _, label := range labels {
+		if width := i18n.GetDisplayWidth(label); width > labelWidth {
+			labelWidth = width
+		}
+	}
+	
+	// Update image ID label
+	imageIDLabel := i18n.T("IMAGE ID:")
+	d.imageInfo.SetLabel("[::b]" + imageIDLabel)
+	
+	// Update field labels
+	d.destination.SetLabel(utils.StringToInputLabel(i18n.T("destination:"), labelWidth))
+	
+	compressLabel := i18n.T("compress:")
+	d.compress.SetLabel(compressLabel)
+	d.compress.SetLabelWidth(i18n.GetDisplayWidth(compressLabel) + 1)
+	
+	formatLabel := i18n.T("format:")
+	d.format.SetLabel(formatLabel)
+	d.format.SetLabelWidth(i18n.GetDisplayWidth(formatLabel) + 1)
+	
+	skipTLSVerifyLabel := i18n.T("skip tls verify:")
+	d.skipTLSVerify.SetLabel(skipTLSVerifyLabel)
+	d.skipTLSVerify.SetLabelWidth(i18n.GetDisplayWidth(skipTLSVerifyLabel) + 1)
+	
+	d.authFile.SetLabel(utils.StringToInputLabel(i18n.T("authfile:"), labelWidth))
+	d.username.SetLabel(utils.StringToInputLabel(i18n.T("username:"), labelWidth))
+	
+	passwordLabel := i18n.T("password:")
+	d.password.SetLabel(utils.StringToInputLabel(passwordLabel, i18n.GetDisplayWidth(passwordLabel)+1))
+	
+	// Rebuild the checkbox/dropdown row with correct widths
+	compressWidth := i18n.GetDisplayWidth(i18n.T("compress:")) + 5  //nolint:mnd
+	formatWidth := i18n.GetDisplayWidth(formatLabel) + 10           //nolint:mnd
+	skipTLSWidth := i18n.GetDisplayWidth(skipTLSVerifyLabel) + 5    //nolint:mnd
+	
+	dcLayout := tview.NewFlex().SetDirection(tview.FlexColumn)
+	dcLayout.AddItem(d.compress, compressWidth, 0, true)
+	dcLayout.AddItem(utils.EmptyBoxSpace(bgColor), 2, 0, false)  //nolint:mnd
+	dcLayout.AddItem(d.format, formatWidth, 0, true)
+	dcLayout.AddItem(utils.EmptyBoxSpace(bgColor), 2, 0, false)  //nolint:mnd
+	dcLayout.AddItem(d.skipTLSVerify, skipTLSWidth, 0, true)
+	dcLayout.AddItem(utils.EmptyBoxSpace(bgColor), 0, 1, false)
+	
+	// username and password row layout
+	userPassLayout := tview.NewFlex().SetDirection(tview.FlexColumn)
+	userPassLayout.AddItem(d.username, 0, 1, true)
+	userPassLayout.AddItem(utils.EmptyBoxSpace(bgColor), 3, 0, false) //nolint:mnd
+	userPassLayout.AddItem(d.password, 0, 1, true)
+	
+	// Rebuild main layout
+	layout := tview.NewFlex().SetDirection(tview.FlexRow)
+	layout.AddItem(utils.EmptyBoxSpace(bgColor), 0, 1, false)
+	layout.AddItem(d.imageInfo, 0, 1, true)
+	layout.AddItem(utils.EmptyBoxSpace(bgColor), 0, 1, false)
+	layout.AddItem(d.destination, 0, 1, true)
+	layout.AddItem(utils.EmptyBoxSpace(bgColor), 0, 1, false)
+	layout.AddItem(dcLayout, 0, 1, true)
+	layout.AddItem(utils.EmptyBoxSpace(bgColor), 0, 1, false)
+	layout.AddItem(userPassLayout, 0, 1, true)
+	layout.AddItem(utils.EmptyBoxSpace(bgColor), 0, 1, false)
+	layout.AddItem(d.authFile, 0, 1, true)
+	
+	// Rebuild content layout
+	d.contentLayout.Clear()
+	d.contentLayout.SetBackgroundColor(bgColor)
+	d.contentLayout.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
+	d.contentLayout.AddItem(layout, 0, 1, true)
+	d.contentLayout.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
+	
+	// Update form buttons
+	d.form.ClearButtons()
+	d.form.AddButton(i18n.T("Cancel"), nil)
+	d.form.AddButton(i18n.T("Push"), nil)
+	
+	// Re-set button handlers
+	if d.cancelHandler != nil {
+		cancelButton := d.form.GetButton(d.form.GetButtonCount() - 2) //nolint:mnd
+		cancelButton.SetSelectedFunc(d.cancelHandler)
+	}
+	
+	if d.pushHandler != nil {
+		pushButton := d.form.GetButton(d.form.GetButtonCount() - 1)
+		pushButton.SetSelectedFunc(d.pushHandler)
 	}
 }

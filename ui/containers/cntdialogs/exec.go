@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/containers/podman-tui/pdcs/containers"
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/ui/dialogs"
 	"github.com/containers/podman-tui/ui/style"
 	"github.com/containers/podman-tui/ui/utils"
@@ -79,84 +80,94 @@ func NewContainerExecDialog() *ContainerExecDialog {
 
 	// label (container ID and Name)
 	dialog.cntInfo.SetBackgroundColor(style.DialogBgColor)
-	dialog.cntInfo.SetLabel("[::b]" + utils.ContainerIDLabel)
+	dialog.cntInfo.SetLabel("[::b]" + i18n.T("CONTAINER ID:"))
 	dialog.cntInfo.SetFieldBackgroundColor(style.DialogBgColor)
 	dialog.cntInfo.SetLabelStyle(tcell.StyleDefault.
 		Background(style.DialogBorderColor).
 		Foreground(style.DialogFgColor))
 
+	// Calculate label width
+	labelWidth := i18n.CalcMaxWidth(
+		i18n.T("command:"),
+		i18n.T("interactive:"),
+		i18n.T("user:"),
+		i18n.T("working dir:"),
+		i18n.T("env vars:"),
+		i18n.T("env file:"),
+	) + 1
+
 	// command
 	dialog.command.SetBackgroundColor(style.DialogBgColor)
-	dialog.command.SetLabel(utils.StringToInputLabel("command:", execDialogLabelWidth))
+	dialog.command.SetLabel(i18n.PadToWidth(i18n.T("command:"), labelWidth))
 	dialog.command.SetFieldStyle(style.InputFieldStyle)
 	dialog.command.SetLabelStyle(style.InputLabelStyle)
 
 	// interactive
 	dialog.interactive.SetBackgroundColor(bgColor)
 	dialog.interactive.SetBorder(false)
-	dialog.interactive.SetLabel("interactive:")
+	dialog.interactive.SetLabel(i18n.T("interactive:"))
 	dialog.interactive.SetLabelColor(fgColor)
-	dialog.interactive.SetLabelWidth(execDialogLabelWidth)
+	dialog.interactive.SetLabelWidth(labelWidth)
 	dialog.interactive.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// tty
-	tLabel := "tty:"
+	ttyLabelWidth := i18n.GetDisplayWidth(i18n.T("tty:")) + 1
 
 	dialog.tty.SetBackgroundColor(bgColor)
 	dialog.tty.SetBorder(false)
-	dialog.tty.SetLabel(tLabel)
+	dialog.tty.SetLabel(i18n.T("tty:"))
 	dialog.tty.SetLabelColor(fgColor)
-	dialog.tty.SetLabelWidth(len(tLabel) + 1)
+	dialog.tty.SetLabelWidth(ttyLabelWidth)
 	dialog.tty.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// privileged
-	pLabel := "privileged:"
+	privilegedLabelWidth := i18n.GetDisplayWidth(i18n.T("privileged:")) + 1
 
 	dialog.privileged.SetBackgroundColor(bgColor)
 	dialog.privileged.SetBorder(false)
-	dialog.privileged.SetLabel(pLabel)
+	dialog.privileged.SetLabel(i18n.T("privileged:"))
 	dialog.privileged.SetLabelColor(fgColor)
-	dialog.privileged.SetLabelWidth(len(pLabel) + 1)
+	dialog.privileged.SetLabelWidth(privilegedLabelWidth)
 	dialog.privileged.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// detach
-	dLabel := "detach:"
+	detachLabelWidth := i18n.GetDisplayWidth(i18n.T("detach:")) + 1
 
 	dialog.detach.SetBackgroundColor(bgColor)
 	dialog.detach.SetBorder(false)
-	dialog.detach.SetLabel(dLabel)
+	dialog.detach.SetLabel(i18n.T("detach:"))
 	dialog.detach.SetLabelColor(fgColor)
-	dialog.detach.SetLabelWidth(len(dLabel) + 1)
+	dialog.detach.SetLabelWidth(detachLabelWidth)
 	dialog.detach.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// working dir
 	dialog.workingDir.SetBackgroundColor(style.DialogBgColor)
-	dialog.workingDir.SetLabel(utils.StringToInputLabel("working dir:", execDialogLabelWidth))
+	dialog.workingDir.SetLabel(i18n.PadToWidth(i18n.T("working dir:"), labelWidth))
 	dialog.workingDir.SetFieldStyle(style.InputFieldStyle)
 	dialog.workingDir.SetLabelStyle(style.InputLabelStyle)
 
 	// env variables
 	dialog.envVariables.SetBackgroundColor(style.DialogBgColor)
-	dialog.envVariables.SetLabel(utils.StringToInputLabel("env vars:", execDialogLabelWidth))
+	dialog.envVariables.SetLabel(i18n.PadToWidth(i18n.T("env vars:"), labelWidth))
 	dialog.envVariables.SetFieldStyle(style.InputFieldStyle)
 	dialog.envVariables.SetLabelStyle(style.InputLabelStyle)
 
 	// env file
 	dialog.envFile.SetBackgroundColor(style.DialogBgColor)
-	dialog.envFile.SetLabel(utils.StringToInputLabel("env file:", execDialogLabelWidth))
+	dialog.envFile.SetLabel(i18n.PadToWidth(i18n.T("env file:"), labelWidth))
 	dialog.envFile.SetFieldStyle(style.InputFieldStyle)
 	dialog.envFile.SetLabelStyle(style.InputLabelStyle)
 
 	// user
 	dialog.user.SetBackgroundColor(style.DialogBgColor)
-	dialog.user.SetLabel(utils.StringToInputLabel("user:", execDialogLabelWidth))
+	dialog.user.SetLabel(i18n.PadToWidth(i18n.T("user:"), labelWidth))
 	dialog.user.SetFieldStyle(style.InputFieldStyle)
 	dialog.user.SetLabelStyle(style.InputLabelStyle)
 
 	// form fields
 	dialog.form = tview.NewForm().
-		AddButton("Cancel", nil).
-		AddButton("Execute", nil).
+		AddButton(i18n.T("Cancel"), nil).
+		AddButton(i18n.T("Execute"), nil).
 		SetButtonsAlign(tview.AlignRight)
 	dialog.form.SetBackgroundColor(bgColor)
 	dialog.form.SetButtonBackgroundColor(style.ButtonBgColor)
@@ -166,7 +177,7 @@ func NewContainerExecDialog() *ContainerExecDialog {
 	dialog.layout.SetBorder(true)
 	dialog.layout.SetBorderColor(style.DialogBorderColor)
 	dialog.layout.SetBackgroundColor(bgColor)
-	dialog.layout.SetTitle("PODMAN CONTAINER EXEC")
+	dialog.layout.SetTitle(i18n.T("PODMAN CONTAINER EXEC"))
 
 	mLayout := tview.NewFlex().SetDirection(tview.FlexRow)
 	// label
@@ -177,15 +188,15 @@ func NewContainerExecDialog() *ContainerExecDialog {
 	mLayout.AddItem(dialog.command, 1, 0, true)
 
 	// interactive, tty, privileged and detach
-	checkBoxWidth := execDialogLabelWidth + 4 //nolint:mnd
+	checkBoxWidth := labelWidth + 4 //nolint:mnd
 	labelPaddings := 5
 	checkBoxLayout := tview.NewFlex().SetDirection(tview.FlexColumn)
 
 	checkBoxLayout.SetBackgroundColor(bgColor)
 	checkBoxLayout.AddItem(dialog.interactive, checkBoxWidth, 0, false)
-	checkBoxLayout.AddItem(dialog.tty, len(tLabel)+labelPaddings, 0, false)
-	checkBoxLayout.AddItem(dialog.privileged, len(pLabel)+labelPaddings, 0, false)
-	checkBoxLayout.AddItem(dialog.detach, len(dLabel)+labelPaddings, 0, false)
+	checkBoxLayout.AddItem(dialog.tty, ttyLabelWidth+labelPaddings, 0, false)
+	checkBoxLayout.AddItem(dialog.privileged, privilegedLabelWidth+labelPaddings, 0, false)
+	checkBoxLayout.AddItem(dialog.detach, detachLabelWidth+labelPaddings, 0, false)
 	checkBoxLayout.AddItem(utils.EmptyBoxSpace(bgColor), 0, 1, true)
 	mLayout.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, true)
 	mLayout.AddItem(checkBoxLayout, 1, 0, true)
@@ -656,4 +667,50 @@ func (d *ContainerExecDialog) ContainerExecOptions() containers.ExecOption {
 	execOptions.User = strings.TrimSpace(d.user.GetText())
 
 	return execOptions
+}
+
+// UpdateLanguage updates all labels to current language.
+func (d *ContainerExecDialog) UpdateLanguage() {
+	// Calculate label width
+	labelWidth := i18n.CalcMaxWidth(
+		i18n.T("command:"),
+		i18n.T("interactive:"),
+		i18n.T("user:"),
+		i18n.T("working dir:"),
+		i18n.T("env vars:"),
+		i18n.T("env file:"),
+	) + 1
+
+	// Update window title
+	d.layout.SetTitle(i18n.T("PODMAN CONTAINER EXEC"))
+
+	// Update container ID label
+	d.cntInfo.SetLabel("[::b]" + i18n.T("CONTAINER ID:"))
+
+	// Update field labels
+	d.command.SetLabel(i18n.PadToWidth(i18n.T("command:"), labelWidth))
+	d.interactive.SetLabel(i18n.T("interactive:"))
+	d.interactive.SetLabelWidth(labelWidth)
+
+	ttyLabelWidth := i18n.GetDisplayWidth(i18n.T("tty:")) + 1
+	d.tty.SetLabel(i18n.T("tty:"))
+	d.tty.SetLabelWidth(ttyLabelWidth)
+
+	privilegedLabelWidth := i18n.GetDisplayWidth(i18n.T("privileged:")) + 1
+	d.privileged.SetLabel(i18n.T("privileged:"))
+	d.privileged.SetLabelWidth(privilegedLabelWidth)
+
+	detachLabelWidth := i18n.GetDisplayWidth(i18n.T("detach:")) + 1
+	d.detach.SetLabel(i18n.T("detach:"))
+	d.detach.SetLabelWidth(detachLabelWidth)
+
+	d.user.SetLabel(i18n.PadToWidth(i18n.T("user:"), labelWidth))
+	d.workingDir.SetLabel(i18n.PadToWidth(i18n.T("working dir:"), labelWidth))
+	d.envVariables.SetLabel(i18n.PadToWidth(i18n.T("env vars:"), labelWidth))
+	d.envFile.SetLabel(i18n.PadToWidth(i18n.T("env file:"), labelWidth))
+
+	// Update form buttons
+	d.form.ClearButtons()
+	d.form.AddButton(i18n.T("Cancel"), d.cancelHandler)
+	d.form.AddButton(i18n.T("Execute"), d.execHandler)
 }

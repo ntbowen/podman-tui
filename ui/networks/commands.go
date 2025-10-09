@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/pdcs/containers"
 	"github.com/containers/podman-tui/pdcs/networks"
 	"github.com/containers/podman-tui/ui/dialogs"
@@ -44,13 +45,13 @@ func (nets *Networks) cconnect() {
 	}
 
 	initData := func() {
-		nets.progressDialog.SetTitle("podman network connect")
+		nets.progressDialog.SetTitle(i18n.T("podman network connect"))
 		nets.progressDialog.Display()
 
 		cntListReport, err := containers.List()
 		if err != nil {
 			nets.progressDialog.Hide()
-			nets.displayError("NETWORK CONNECT ERROR", err)
+			nets.displayError(i18n.T("NETWORK CONNECT ERROR"), err)
 			nets.appFocusHandler()
 
 			return
@@ -73,7 +74,7 @@ func (nets *Networks) connect() {
 
 	connect := func() {
 		nets.connectDialog.Hide()
-		nets.progressDialog.SetTitle("podman network connect")
+		nets.progressDialog.SetTitle(i18n.T("podman network connect"))
 		nets.progressDialog.Display()
 
 		err := networks.Connect(connectOptions)
@@ -81,7 +82,7 @@ func (nets *Networks) connect() {
 		nets.progressDialog.Hide()
 
 		if err != nil {
-			nets.displayError("NETWORK CONNECT ERROR", err)
+			nets.displayError(i18n.T("NETWORK CONNECT ERROR"), err)
 		}
 
 		nets.appFocusHandler()
@@ -98,7 +99,7 @@ func (nets *Networks) cdisconnect() {
 	}
 
 	initData := func() {
-		nets.progressDialog.SetTitle("podman network disconnect")
+		nets.progressDialog.SetTitle(i18n.T("podman network disconnect"))
 		nets.progressDialog.Display()
 
 		cntListReport, err := containers.List()
@@ -106,7 +107,7 @@ func (nets *Networks) cdisconnect() {
 		nets.progressDialog.Hide()
 
 		if err != nil {
-			nets.displayError("NETWORK DISCONNECT ERROR", err)
+			nets.displayError(i18n.T("NETWORK DISCONNECT ERROR"), err)
 			nets.appFocusHandler()
 
 			return
@@ -128,7 +129,7 @@ func (nets *Networks) disconnect() {
 		networkName, containerID := nets.disconnectDialog.GetDisconnectOptions()
 
 		nets.disconnectDialog.Hide()
-		nets.progressDialog.SetTitle("podman network disconnect")
+		nets.progressDialog.SetTitle(i18n.T("podman network disconnect"))
 		nets.progressDialog.Display()
 
 		err := networks.Disconnect(networkName, containerID)
@@ -136,7 +137,7 @@ func (nets *Networks) disconnect() {
 		nets.progressDialog.Hide()
 
 		if err != nil {
-			nets.displayError("NETWORK DISCONNECT ERROR", err)
+			nets.displayError(i18n.T("NETWORK DISCONNECT ERROR"), err)
 		}
 
 		nets.appFocusHandler()
@@ -150,7 +151,7 @@ func (nets *Networks) create() {
 
 	_, err := networks.Create(createOpts)
 	if err != nil {
-		nets.displayError("NETWORK CREATE ERROR", err)
+		nets.displayError(i18n.T("NETWORK CREATE ERROR"), err)
 
 		return
 	}
@@ -176,22 +177,22 @@ func (nets *Networks) inspect() {
 
 	headerLabel := fmt.Sprintf("%s (%s)", netID, netName)
 
-	nets.messageDialog.SetTitle("podman network inspect")
+	nets.messageDialog.SetTitle(i18n.T("podman network inspect"))
 	nets.messageDialog.SetText(dialogs.MessageNetworkInfo, headerLabel, data)
 	nets.messageDialog.DisplayFullSize()
 }
 
 func (nets *Networks) cprune() {
-	nets.confirmDialog.SetTitle("podman network prune")
+	nets.confirmDialog.SetTitle(i18n.T("podman network prune"))
 
 	nets.confirmData = utils.PruneCommandLabel
 
-	nets.confirmDialog.SetText("Are you sure you want to remove all un used network ?")
+	nets.confirmDialog.SetText(i18n.T("Are you sure you want to remove all un used network ?"))
 	nets.confirmDialog.Display()
 }
 
 func (nets *Networks) prune() {
-	nets.progressDialog.SetTitle("network prune in progress")
+	nets.progressDialog.SetTitle(i18n.T("network prune in progress"))
 	nets.progressDialog.Display()
 
 	prune := func() {
@@ -200,7 +201,7 @@ func (nets *Networks) prune() {
 		nets.progressDialog.Hide()
 
 		if err != nil {
-			nets.displayError("NETWORK PRUNE ERROR", err)
+			nets.displayError(i18n.T("NETWORK PRUNE ERROR"), err)
 		}
 
 		nets.appFocusHandler()
@@ -218,21 +219,20 @@ func (nets *Networks) rm() {
 		return
 	}
 
-	nets.confirmDialog.SetTitle("podman network remove")
+	nets.confirmDialog.SetTitle(i18n.T("podman network remove"))
 	nets.confirmData = "rm"
 
 	bgColor := style.GetColorHex(style.DialogBorderColor)
 	fgColor := style.GetColorHex(style.DialogFgColor)
-	networkItem := fmt.Sprintf("[%s:%s:b]NETWORK ID:[:-:-] %s (%s)", fgColor, bgColor, netID, netName)
+	networkItem := fmt.Sprintf("[%s:%s:b]%s[:-:-] %s (%s)", fgColor, bgColor, i18n.T("NETWORK ID:"), netID, netName)
 
-	description := fmt.Sprintf("%s\n\nAre you sure you want to remove the selected network?", //nolint:perfsprint
-		networkItem)
+	description := fmt.Sprintf("%s\n\n%s", networkItem, i18n.T("Are you sure you want to remove the selected network?"))
 	nets.confirmDialog.SetText(description)
 	nets.confirmDialog.Display()
 }
 
 func (nets *Networks) remove() {
-	nets.progressDialog.SetTitle("network remove in progress")
+	nets.progressDialog.SetTitle(i18n.T("network remove in progress"))
 	nets.progressDialog.Display()
 
 	remove := func(id string) {
@@ -241,7 +241,7 @@ func (nets *Networks) remove() {
 		nets.progressDialog.Hide()
 
 		if err != nil {
-			title := fmt.Sprintf("NETWORK (%s) REMOVE ERROR", nets.selectedID)
+			title := fmt.Sprintf(i18n.T("NETWORK (%s) REMOVE ERROR"), nets.selectedID)
 
 			nets.displayError(title, err)
 		}

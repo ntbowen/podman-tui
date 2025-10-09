@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/pdcs/networks"
 	"github.com/containers/podman-tui/ui/dialogs"
 	"github.com/containers/podman-tui/ui/style"
@@ -68,9 +69,24 @@ func NewNetworkConnectDialog() *NetworkConnectDialog {
 	ddUnselectedStyle := style.DropDownUnselected
 	ddselectedStyle := style.DropDownSelected
 
+	// Calculate dynamic label width for multi-byte characters
+	labels := []string{
+		i18n.T("container:"),
+		i18n.T("alias:"),
+		i18n.T("ipv4:"),
+		i18n.T("ipv6:"),
+		i18n.T("mac address:"),
+	}
+	maxLabelWidth := 0
+	for _, label := range labels {
+		if width := i18n.GetDisplayWidth(label); width > maxLabelWidth {
+			maxLabelWidth = width
+		}
+	}
+
 	// network input field
 	dialog.network.SetBackgroundColor(style.DialogBgColor)
-	dialog.network.SetLabel("[::b]NETWORK ID:")
+	dialog.network.SetLabel("[::b]" + i18n.T("NETWORK ID:"))
 	dialog.network.SetFieldBackgroundColor(style.DialogBgColor)
 	dialog.network.SetLabelStyle(tcell.StyleDefault.
 		Background(style.DialogBorderColor).
@@ -79,8 +95,8 @@ func NewNetworkConnectDialog() *NetworkConnectDialog {
 	// container drop down
 	dialog.container.SetBackgroundColor(bgColor)
 	dialog.container.SetLabelColor(fgColor)
-	dialog.container.SetLabel("container:")
-	dialog.container.SetLabelWidth(labelWidth)
+	dialog.container.SetLabel(i18n.T("container:"))
+	dialog.container.SetLabelWidth(maxLabelWidth + 1)
 	dialog.container.SetOptions([]string{""}, nil)
 	dialog.container.SetListStyles(ddUnselectedStyle, ddselectedStyle)
 	dialog.container.SetCurrentOption(0)
@@ -90,31 +106,31 @@ func NewNetworkConnectDialog() *NetworkConnectDialog {
 
 	// aliases input field
 	dialog.aliases.SetBackgroundColor(bgColor)
-	dialog.aliases.SetLabel(utils.StringToInputLabel("alias:", labelWidth))
+	dialog.aliases.SetLabel(utils.StringToInputLabel(i18n.T("alias:"), maxLabelWidth))
 	dialog.aliases.SetFieldStyle(style.InputFieldStyle)
 	dialog.aliases.SetLabelStyle(style.InputLabelStyle)
 
 	// ipv4 input field
 	dialog.ipv4.SetBackgroundColor(bgColor)
-	dialog.ipv4.SetLabel(utils.StringToInputLabel("ipv4:", labelWidth))
+	dialog.ipv4.SetLabel(utils.StringToInputLabel(i18n.T("ipv4:"), maxLabelWidth))
 	dialog.ipv4.SetFieldStyle(style.InputFieldStyle)
 	dialog.ipv4.SetLabelStyle(style.InputLabelStyle)
 
 	// ipv6 input field
 	dialog.ipv6.SetBackgroundColor(bgColor)
-	dialog.ipv6.SetLabel(utils.StringToInputLabel("ipv6:", labelWidth))
+	dialog.ipv6.SetLabel(utils.StringToInputLabel(i18n.T("ipv6:"), maxLabelWidth))
 	dialog.ipv6.SetFieldStyle(style.InputFieldStyle)
 	dialog.ipv6.SetLabelStyle(style.InputLabelStyle)
 
 	// mac address input field
 	dialog.macAddr.SetBackgroundColor(bgColor)
-	dialog.macAddr.SetLabel(utils.StringToInputLabel("mac address:", labelWidth))
+	dialog.macAddr.SetLabel(utils.StringToInputLabel(i18n.T("mac address:"), maxLabelWidth))
 	dialog.macAddr.SetFieldStyle(style.InputFieldStyle)
 	dialog.macAddr.SetLabelStyle(style.InputLabelStyle)
 
 	// form
-	dialog.form.AddButton("Cancel", nil)
-	dialog.form.AddButton("Connect", nil)
+	dialog.form.AddButton(i18n.T("Cancel"), nil)
+	dialog.form.AddButton(i18n.T("Connect"), nil)
 	dialog.form.SetButtonsAlign(tview.AlignRight)
 	dialog.form.SetBackgroundColor(bgColor)
 	dialog.form.SetButtonBackgroundColor(style.ButtonBgColor)
@@ -146,7 +162,7 @@ func NewNetworkConnectDialog() *NetworkConnectDialog {
 	dialog.layout.SetBackgroundColor(bgColor)
 	dialog.layout.SetBorder(true)
 	dialog.layout.SetBorderColor(style.DialogBorderColor)
-	dialog.layout.SetTitle("PODMAN NETWORK CONNECT")
+	dialog.layout.SetTitle(i18n.T("PODMAN NETWORK CONNECT"))
 	dialog.layout.AddItem(mainOptsLayout, 0, 1, true)
 	dialog.layout.AddItem(dialog.form, dialogs.DialogFormHeight, 0, true)
 
@@ -396,5 +412,53 @@ func (d *NetworkConnectDialog) setFocusElement() {
 		d.focusElement = netConnectMacAddrFocus
 	case netConnectMacAddrFocus:
 		d.focusElement = netConnectFormFocus
+	}
+}
+
+// UpdateLanguage updates all translatable text in the dialog.
+func (d *NetworkConnectDialog) UpdateLanguage() {
+	// Update dialog title
+	d.layout.SetTitle(i18n.T("PODMAN NETWORK CONNECT"))
+	
+	// Update network label
+	d.network.SetLabel("[::b]" + i18n.T("NETWORK ID:"))
+	
+	// Calculate dynamic label width for multi-byte characters
+	labels := []string{
+		i18n.T("container:"),
+		i18n.T("alias:"),
+		i18n.T("ipv4:"),
+		i18n.T("ipv6:"),
+		i18n.T("mac address:"),
+	}
+	maxLabelWidth := 0
+	for _, label := range labels {
+		if width := i18n.GetDisplayWidth(label); width > maxLabelWidth {
+			maxLabelWidth = width
+		}
+	}
+	
+	// Update field labels
+	d.container.SetLabel(i18n.T("container:"))
+	d.container.SetLabelWidth(maxLabelWidth + 1)
+	d.aliases.SetLabel(utils.StringToInputLabel(i18n.T("alias:"), maxLabelWidth))
+	d.ipv4.SetLabel(utils.StringToInputLabel(i18n.T("ipv4:"), maxLabelWidth))
+	d.ipv6.SetLabel(utils.StringToInputLabel(i18n.T("ipv6:"), maxLabelWidth))
+	d.macAddr.SetLabel(utils.StringToInputLabel(i18n.T("mac address:"), maxLabelWidth))
+	
+	// Update form buttons
+	d.form.ClearButtons()
+	d.form.AddButton(i18n.T("Cancel"), nil)
+	d.form.AddButton(i18n.T("Connect"), nil)
+	
+	// Re-set button handlers
+	if d.cancelHandler != nil {
+		cancelButton := d.form.GetButton(d.form.GetButtonCount() - 2) //nolint:mnd
+		cancelButton.SetSelectedFunc(d.cancelHandler)
+	}
+	
+	if d.connectHandler != nil {
+		connectButton := d.form.GetButton(d.form.GetButtonCount() - 1)
+		connectButton.SetSelectedFunc(d.connectHandler)
 	}
 }

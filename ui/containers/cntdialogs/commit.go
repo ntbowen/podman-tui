@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/containers/buildah/define"
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/pdcs/containers"
 	"github.com/containers/podman-tui/ui/dialogs"
 	"github.com/containers/podman-tui/ui/style"
@@ -69,11 +70,19 @@ func NewContainerCommitDialog() *ContainerCommitDialog {
 
 	ddUnselectedStyle := style.DropDownUnselected
 	ddselectedStyle := style.DropDownSelected
-	labelWidth := 9
+	
+	// Calculate label width for alignment
+	labelWidth := i18n.CalcMaxWidth(
+		i18n.T("image:"),
+		i18n.T("author:"),
+		i18n.T("change:"),
+		i18n.T("format:"),
+		i18n.T("message:"),
+	) + 1 // Add space after label
 
 	// container info input field
 	dialog.cntInfo.SetBackgroundColor(style.DialogBgColor)
-	dialog.cntInfo.SetLabel("[::b]" + utils.ContainerIDLabel)
+	dialog.cntInfo.SetLabel("[::b]" + i18n.T("CONTAINER ID:"))
 	dialog.cntInfo.SetFieldBackgroundColor(style.DialogBgColor)
 	dialog.cntInfo.SetLabelStyle(tcell.StyleDefault.
 		Background(style.DialogBorderColor).
@@ -81,24 +90,24 @@ func NewContainerCommitDialog() *ContainerCommitDialog {
 
 	// image field
 	dialog.image.SetBackgroundColor(style.DialogBgColor)
-	dialog.image.SetLabel(utils.StringToInputLabel("image:", labelWidth))
+	dialog.image.SetLabel(i18n.PadToWidth(i18n.T("image:"), labelWidth))
 	dialog.image.SetFieldStyle(style.InputFieldStyle)
 	dialog.image.SetLabelStyle(style.InputLabelStyle)
 
 	// author field
 	dialog.author.SetBackgroundColor(style.DialogBgColor)
-	dialog.author.SetLabel(utils.StringToInputLabel("author:", labelWidth))
+	dialog.author.SetLabel(i18n.PadToWidth(i18n.T("author:"), labelWidth))
 	dialog.author.SetFieldStyle(style.InputFieldStyle)
 	dialog.author.SetLabelStyle(style.InputLabelStyle)
 
 	// change field
 	dialog.change.SetBackgroundColor(style.DialogBgColor)
-	dialog.change.SetLabel(utils.StringToInputLabel("change:", labelWidth))
+	dialog.change.SetLabel(i18n.PadToWidth(i18n.T("change:"), labelWidth))
 	dialog.change.SetFieldStyle(style.InputFieldStyle)
 	dialog.change.SetLabelStyle(style.InputLabelStyle)
 
 	// format options dropdown
-	dialog.format.SetLabel("format:")
+	dialog.format.SetLabel(i18n.T("format:"))
 	dialog.format.SetTitleAlign(tview.AlignRight)
 	dialog.format.SetLabelColor(style.DialogFgColor)
 	dialog.format.SetLabelWidth(labelWidth)
@@ -115,31 +124,25 @@ func NewContainerCommitDialog() *ContainerCommitDialog {
 
 	// commit message field
 	dialog.message.SetBackgroundColor(style.DialogBgColor)
-	dialog.message.SetLabel(utils.StringToInputLabel("message:", labelWidth))
+	dialog.message.SetLabel(i18n.PadToWidth(i18n.T("message:"), labelWidth))
 	dialog.message.SetFieldStyle(style.InputFieldStyle)
 	dialog.message.SetLabelStyle(style.InputLabelStyle)
 
 	// pause checkbox
-	pauseLabel := "pause container:"
-
 	dialog.pause.SetBackgroundColor(style.DialogBgColor)
 	dialog.pause.SetLabelColor(style.DialogFgColor)
-	dialog.pause.SetLabel(pauseLabel)
-	dialog.pause.SetLabelWidth(len(pauseLabel) + 1)
+	dialog.pause.SetLabel(i18n.T("pause container:"))
 	dialog.pause.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// squash checkbox
-	squashLabel := "squash layers:"
-
 	dialog.squash.SetBackgroundColor(style.DialogBgColor)
 	dialog.squash.SetLabelColor(style.DialogFgColor)
-	dialog.squash.SetLabel(squashLabel)
-	dialog.squash.SetLabelWidth(len(squashLabel) + 1)
+	dialog.squash.SetLabel(i18n.T("squash layers:"))
 	dialog.squash.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// form
-	dialog.form.AddButton("Cancel", nil)
-	dialog.form.AddButton("Commit", nil)
+	dialog.form.AddButton(i18n.T("Cancel"), nil)
+	dialog.form.AddButton(i18n.T("Commit"), nil)
 	dialog.form.SetButtonsAlign(tview.AlignRight)
 	dialog.form.SetBackgroundColor(style.DialogBgColor)
 	dialog.form.SetButtonBackgroundColor(style.ButtonBgColor)
@@ -155,7 +158,9 @@ func NewContainerCommitDialog() *ContainerCommitDialog {
 	dcLayout := tview.NewFlex().SetDirection(tview.FlexColumn)
 	dcLayout.SetBackgroundColor(style.DialogBgColor)
 	dcLayout.AddItem(dialog.format, 0, 1, true)
+	dcLayout.AddItem(utils.EmptyBoxSpace(style.DialogBgColor), 2, 0, false) // spacing
 	dcLayout.AddItem(dialog.squash, 0, 1, true)
+	dcLayout.AddItem(utils.EmptyBoxSpace(style.DialogBgColor), 2, 0, false) // spacing
 	dcLayout.AddItem(dialog.pause, 0, 1, true)
 	dcLayout.AddItem(utils.EmptyBoxSpace(style.DialogBgColor), 0, 1, false)
 
@@ -183,7 +188,7 @@ func NewContainerCommitDialog() *ContainerCommitDialog {
 	dialog.layout.SetBackgroundColor(style.DialogBgColor)
 	dialog.layout.SetBorder(true)
 	dialog.layout.SetBorderColor(style.DialogBorderColor)
-	dialog.layout.SetTitle("PODMAN CONTAINER COMMIT")
+	dialog.layout.SetTitle(i18n.T("PODMAN CONTAINER COMMIT"))
 	dialog.layout.AddItem(inputLayout, 0, 1, true)
 	dialog.layout.AddItem(dialog.form, dialogs.DialogFormHeight, 0, true)
 
@@ -459,4 +464,41 @@ func (d *ContainerCommitDialog) setFocusElement() {
 	case cntCommitMessageFocus:
 		d.focusElement = cntCommitFormFocus
 	}
+}
+
+// UpdateLanguage updates all translatable text when language changes
+func (d *ContainerCommitDialog) UpdateLanguage() {
+	// Calculate label width for alignment
+	labelWidth := i18n.CalcMaxWidth(
+		i18n.T("image:"),
+		i18n.T("author:"),
+		i18n.T("change:"),
+		i18n.T("format:"),
+		i18n.T("message:"),
+	) + 1 // Add space after label
+
+	// Update dialog title
+	d.layout.SetTitle(i18n.T("PODMAN CONTAINER COMMIT"))
+	
+	// Update container info label
+	d.cntInfo.SetLabel("[::b]" + i18n.T("CONTAINER ID:"))
+	
+	// Update input field labels
+	d.image.SetLabel(i18n.PadToWidth(i18n.T("image:"), labelWidth))
+	d.author.SetLabel(i18n.PadToWidth(i18n.T("author:"), labelWidth))
+	d.change.SetLabel(i18n.PadToWidth(i18n.T("change:"), labelWidth))
+	d.message.SetLabel(i18n.PadToWidth(i18n.T("message:"), labelWidth))
+	
+	// Update dropdown label
+	d.format.SetLabel(i18n.T("format:"))
+	d.format.SetLabelWidth(labelWidth)
+	
+	// Update checkbox labels
+	d.pause.SetLabel(i18n.T("pause container:"))
+	d.squash.SetLabel(i18n.T("squash layers:"))
+	
+	// Update form buttons
+	d.form.ClearButtons()
+	d.form.AddButton(i18n.T("Cancel"), d.cancelHandler)
+	d.form.AddButton(i18n.T("Commit"), d.commitHandler)
 }

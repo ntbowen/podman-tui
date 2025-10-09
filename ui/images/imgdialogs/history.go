@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/ui/dialogs"
 	"github.com/containers/podman-tui/ui/style"
 	"github.com/containers/podman-tui/ui/utils"
@@ -44,7 +45,7 @@ func NewImageHistoryDialog() *ImageHistoryDialog {
 		Box:       tview.NewBox(),
 		imageInfo: tview.NewInputField(),
 		tableHeaders: []string{
-			"id", "created", "create by", "size", "comment",
+			i18n.T("id"), i18n.T("created"), i18n.T("create by"), i18n.T("size"), i18n.T("comment"),
 		},
 		display: false,
 	}
@@ -53,11 +54,11 @@ func NewImageHistoryDialog() *ImageHistoryDialog {
 	historyTableBgColor := style.DialogBgColor
 
 	// image info field.
-	imageInfoLabel := "IMAGE ID:"
+	imageInfoLabel := i18n.T("IMAGE ID:")
 
 	dialog.imageInfo.SetBackgroundColor(style.DialogBgColor)
 	dialog.imageInfo.SetLabel("[::b]" + imageInfoLabel)
-	dialog.imageInfo.SetLabelWidth(len(imageInfoLabel) + 1)
+	dialog.imageInfo.SetLabelWidth(i18n.GetDisplayWidth(imageInfoLabel) + 1)
 	dialog.imageInfo.SetFieldBackgroundColor(style.DialogBgColor)
 	dialog.imageInfo.SetLabelStyle(tcell.StyleDefault.
 		Background(style.DialogBorderColor).
@@ -68,7 +69,7 @@ func NewImageHistoryDialog() *ImageHistoryDialog {
 	dialog.initTable()
 
 	dialog.form = tview.NewForm().
-		AddButton("Cancel", nil).
+		AddButton(i18n.T("Cancel"), nil).
 		SetButtonsAlign(tview.AlignRight)
 	dialog.form.SetBackgroundColor(bgColor)
 	dialog.form.SetButtonBackgroundColor(style.ButtonBgColor)
@@ -87,7 +88,7 @@ func NewImageHistoryDialog() *ImageHistoryDialog {
 	tableLayout.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
 
 	dialog.layout = tview.NewFlex().SetDirection(tview.FlexRow)
-	dialog.layout.SetTitle("PODMAN IMAGE HISTORY")
+	dialog.layout.SetTitle(i18n.T("PODMAN IMAGE HISTORY"))
 	dialog.layout.SetBorder(true)
 	dialog.layout.SetBorderColor(style.DialogBorderColor)
 	dialog.layout.SetBackgroundColor(bgColor)
@@ -310,5 +311,39 @@ func (d *ImageHistoryDialog) initTable() {
 				SetTextColor(fgColor).
 				SetAlign(tview.AlignLeft).
 				SetSelectable(false))
+	}
+}
+
+// UpdateLanguage updates all translatable text in the dialog.
+func (d *ImageHistoryDialog) UpdateLanguage() {
+	// Update dialog title
+	d.layout.SetTitle(i18n.T("PODMAN IMAGE HISTORY"))
+	
+	// Update table headers
+	d.tableHeaders = []string{
+		i18n.T("id"), i18n.T("created"), i18n.T("create by"), i18n.T("size"), i18n.T("comment"),
+	}
+	
+	// Update image info label
+	imageInfoLabel := i18n.T("IMAGE ID:")
+	d.imageInfo.SetLabel("[::b]" + imageInfoLabel)
+	d.imageInfo.SetLabelWidth(i18n.GetDisplayWidth(imageInfoLabel) + 1)
+	
+	// Update form buttons
+	d.form.ClearButtons()
+	d.form.AddButton(i18n.T("Cancel"), nil)
+	
+	// Re-set button handler
+	if d.cancelHandler != nil {
+		cancelButton := d.form.GetButton(d.form.GetButtonCount() - 1)
+		cancelButton.SetSelectedFunc(d.cancelHandler)
+	}
+	
+	// Refresh table headers
+	d.initTable()
+	
+	// Re-populate table data if exists
+	if len(d.results) > 0 {
+		d.UpdateResults(d.results)
 	}
 }

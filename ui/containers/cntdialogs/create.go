@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/pdcs/containers"
 	"github.com/containers/podman-tui/pdcs/images"
 	"github.com/containers/podman-tui/pdcs/networks"
@@ -129,6 +130,21 @@ const (
 	createContainerResourcePageIndex
 	createContainerNamespacePageIndex
 )
+
+// Fixed page IDs (not translated) used for page registration
+var categoryPageIDs = []string{
+	"container_page",
+	"environment_page",
+	"user_groups_page",
+	"dns_page",
+	"health_page",
+	"network_page",
+	"port_page",
+	"security_page",
+	"volume_page",
+	"resource_page",
+	"namespace_page",
+}
 
 type ContainerCreateDialogMode int
 
@@ -263,17 +279,17 @@ func NewContainerCreateDialog(mode ContainerCreateDialogMode) *ContainerCreateDi
 		namespacePage:     tview.NewFlex(),
 		form:              tview.NewForm(),
 		categoryLabels: []string{
-			"Container",
-			"Environment",
-			"User and groups",
-			"DNS Settings",
-			"Health check",
-			"Network Settings",
-			"Ports Settings",
-			"Security Options",
-			"Volumes Settings",
-			"Resource Settings",
-			"Namespace Options",
+			i18n.T("Container"),
+			i18n.T("Environment"),
+			i18n.T("User and groups"),
+			i18n.T("DNS Settings"),
+			i18n.T("Health check"),
+			i18n.T("Network Settings"),
+			i18n.T("Ports Settings"),
+			i18n.T("Security Options"),
+			i18n.T("Volumes Settings"),
+			i18n.T("Resource Settings"),
+			i18n.T("Namespace Options"),
 		},
 		activePageIndex:                     0,
 		display:                             false,
@@ -1081,29 +1097,29 @@ func (d *ContainerCreateDialog) setupLayout() {
 
 	// form
 	d.form.SetBackgroundColor(bgColor)
-	d.form.AddButton("Cancel", nil)
+	d.form.AddButton(i18n.T("Cancel"), nil)
 
 	if d.mode == ContainerCreateOnlyDialogMode {
-		d.form.AddButton("Create", nil)
+		d.form.AddButton(i18n.T("Create"), nil)
 	} else {
-		d.form.AddButton("Run", nil)
+		d.form.AddButton(i18n.T("Run"), nil)
 	}
 
 	d.form.SetButtonsAlign(tview.AlignRight)
 	d.form.SetButtonBackgroundColor(style.ButtonBgColor)
 
-	// adding category pages
-	d.categoryPages.AddPage(d.categoryLabels[createContainerInfoPageIndex], d.containerInfoPage, true, true)
-	d.categoryPages.AddPage(d.categoryLabels[createContainerEnvironmentPageIndex], d.environmentPage, true, true)
-	d.categoryPages.AddPage(d.categoryLabels[createContainerUserGroupsPageIndex], d.userGroupsPage, true, true)
-	d.categoryPages.AddPage(d.categoryLabels[createContainerDNSPageIndex], d.dnsPage, true, true)
-	d.categoryPages.AddPage(d.categoryLabels[createContainerHealthPageIndex], d.healthPage, true, true)
-	d.categoryPages.AddPage(d.categoryLabels[createContainerNetworkingPageIndex], d.networkingPage, true, true)
-	d.categoryPages.AddPage(d.categoryLabels[createContainerPortPageIndex], d.portPage, true, true)
-	d.categoryPages.AddPage(d.categoryLabels[createContainerSecurityOptsPageIndex], d.securityOptsPage, true, true)
-	d.categoryPages.AddPage(d.categoryLabels[createContainerVolumePageIndex], d.volumePage, true, true)
-	d.categoryPages.AddPage(d.categoryLabels[createContainerResourcePageIndex], d.resourcePage, true, true)
-	d.categoryPages.AddPage(d.categoryLabels[createContainerNamespacePageIndex], d.namespacePage, true, true)
+	// adding category pages (use fixed IDs, not translated labels)
+	d.categoryPages.AddPage(categoryPageIDs[createContainerInfoPageIndex], d.containerInfoPage, true, true)
+	d.categoryPages.AddPage(categoryPageIDs[createContainerEnvironmentPageIndex], d.environmentPage, true, true)
+	d.categoryPages.AddPage(categoryPageIDs[createContainerUserGroupsPageIndex], d.userGroupsPage, true, true)
+	d.categoryPages.AddPage(categoryPageIDs[createContainerDNSPageIndex], d.dnsPage, true, true)
+	d.categoryPages.AddPage(categoryPageIDs[createContainerHealthPageIndex], d.healthPage, true, true)
+	d.categoryPages.AddPage(categoryPageIDs[createContainerNetworkingPageIndex], d.networkingPage, true, true)
+	d.categoryPages.AddPage(categoryPageIDs[createContainerPortPageIndex], d.portPage, true, true)
+	d.categoryPages.AddPage(categoryPageIDs[createContainerSecurityOptsPageIndex], d.securityOptsPage, true, true)
+	d.categoryPages.AddPage(categoryPageIDs[createContainerVolumePageIndex], d.volumePage, true, true)
+	d.categoryPages.AddPage(categoryPageIDs[createContainerResourcePageIndex], d.resourcePage, true, true)
+	d.categoryPages.AddPage(categoryPageIDs[createContainerNamespacePageIndex], d.namespacePage, true, true)
 
 	// add it to layout.
 	d.layout.SetBackgroundColor(bgColor)
@@ -1111,9 +1127,9 @@ func (d *ContainerCreateDialog) setupLayout() {
 	d.layout.SetBorderColor(style.DialogBorderColor)
 
 	if d.mode == ContainerCreateOnlyDialogMode {
-		d.layout.SetTitle("PODMAN CONTAINER CREATE")
+		d.layout.SetTitle(i18n.T("PODMAN CONTAINER CREATE"))
 	} else {
-		d.layout.SetTitle("PODMAN CONTAINER RUN")
+		d.layout.SetTitle(i18n.T("PODMAN CONTAINER RUN"))
 	}
 
 	_, layoutWidth := utils.AlignStringListWidth(d.categoryLabels)
@@ -1131,22 +1147,44 @@ func (d *ContainerCreateDialog) setupContainerInfoPageUI() {
 	bgColor := style.DialogBgColor
 	ddUnselectedStyle := style.DropDownUnselected
 	ddselectedStyle := style.DropDownSelected
-	cntInfoPageLabelWidth := 12
+	
+	// Calculate label width for alignment
+	cntInfoPageLabelWidth := i18n.CalcMaxWidth(
+		i18n.T("name:"),
+		i18n.T("command:"),
+		i18n.T("image:"),
+		i18n.T("pod:"),
+		i18n.T("labels:"),
+		i18n.T("secret:"),
+	) + 1 // Add space after label
+	
+	// Calculate checkbox label widths
+	checkboxLabelWidth1 := i18n.CalcMaxWidth(
+		i18n.T("privileged:"),
+		i18n.T("interactive:"),
+	) + 1
+	
+	checkboxLabelWidth2 := i18n.CalcMaxWidth(
+		i18n.T("remove:"),
+		i18n.T("detach:"),
+	) + 1
+	
+	timeoutLabelWidth := i18n.GetDisplayWidth(i18n.T("timeout:")) + 1
 
 	// name field
 	d.containerNameField.SetBackgroundColor(style.DialogBgColor)
-	d.containerNameField.SetLabel(utils.StringToInputLabel("name:", cntInfoPageLabelWidth))
+	d.containerNameField.SetLabel(i18n.PadToWidth(i18n.T("name:"), cntInfoPageLabelWidth))
 	d.containerNameField.SetFieldStyle(style.InputFieldStyle)
 	d.containerNameField.SetLabelStyle(style.InputLabelStyle)
 
 	// command field
 	d.containerCommandField.SetBackgroundColor(style.DialogBgColor)
-	d.containerCommandField.SetLabel(utils.StringToInputLabel("command:", cntInfoPageLabelWidth))
+	d.containerCommandField.SetLabel(i18n.PadToWidth(i18n.T("command:"), cntInfoPageLabelWidth))
 	d.containerCommandField.SetFieldStyle(style.InputFieldStyle)
 	d.containerCommandField.SetLabelStyle(style.InputLabelStyle)
 
 	// image field
-	d.containerImageField.SetLabel("image:")
+	d.containerImageField.SetLabel(i18n.T("image:"))
 	d.containerImageField.SetLabelWidth(cntInfoPageLabelWidth)
 	d.containerImageField.SetBackgroundColor(bgColor)
 	d.containerImageField.SetLabelColor(style.DialogFgColor)
@@ -1155,7 +1193,7 @@ func (d *ContainerCreateDialog) setupContainerInfoPageUI() {
 	d.containerImageField.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// pod field
-	d.containerPodField.SetLabel("pod:")
+	d.containerPodField.SetLabel(i18n.T("pod:"))
 	d.containerPodField.SetLabelWidth(cntInfoPageLabelWidth)
 	d.containerPodField.SetBackgroundColor(bgColor)
 	d.containerPodField.SetLabelColor(style.DialogFgColor)
@@ -1165,77 +1203,75 @@ func (d *ContainerCreateDialog) setupContainerInfoPageUI() {
 
 	// labels field
 	d.containerLabelsField.SetBackgroundColor(style.DialogBgColor)
-	d.containerLabelsField.SetLabel(utils.StringToInputLabel("labels:", cntInfoPageLabelWidth))
+	d.containerLabelsField.SetLabel(i18n.PadToWidth(i18n.T("labels:"), cntInfoPageLabelWidth))
 	d.containerLabelsField.SetFieldStyle(style.InputFieldStyle)
 	d.containerLabelsField.SetLabelStyle(style.InputLabelStyle)
 
 	// privileged
-	d.containerPrivilegedField.SetLabel("privileged:")
-	d.containerPrivilegedField.SetLabelWidth(cntInfoPageLabelWidth)
+	d.containerPrivilegedField.SetLabel(i18n.T("privileged:"))
+	d.containerPrivilegedField.SetLabelWidth(checkboxLabelWidth1)
 	d.containerPrivilegedField.SetBackgroundColor(bgColor)
 	d.containerPrivilegedField.SetLabelColor(style.DialogFgColor)
 	d.containerPrivilegedField.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// timeout field
-	timeoutLabel := "timeout:"
-
 	d.containerTimeoutField.SetBackgroundColor(style.DialogBgColor)
-	d.containerTimeoutField.SetLabel(utils.StringToInputLabel(timeoutLabel, len(timeoutLabel)+1))
+	d.containerTimeoutField.SetLabel(i18n.PadToWidth(i18n.T("timeout:"), timeoutLabelWidth))
 	d.containerTimeoutField.SetFieldStyle(style.InputFieldStyle)
 	d.containerTimeoutField.SetLabelStyle(style.InputLabelStyle)
 
 	// interactive
-	interactiveLabel := "interactive:"
-	d.containerInteractiveField.SetLabel(interactiveLabel)
-	d.containerInteractiveField.SetLabelWidth(len(interactiveLabel) + 1)
+	d.containerInteractiveField.SetLabel(i18n.T("interactive:"))
+	d.containerInteractiveField.SetLabelWidth(checkboxLabelWidth1)
 	d.containerInteractiveField.SetBackgroundColor(bgColor)
 	d.containerInteractiveField.SetLabelColor(style.DialogFgColor)
 	d.containerInteractiveField.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// detach
-	d.containerDetachField.SetLabel("detach:")
-	d.containerDetachField.SetLabelWidth(cntInfoPageLabelWidth)
+	d.containerDetachField.SetLabel(i18n.T("detach:"))
+	d.containerDetachField.SetLabelWidth(checkboxLabelWidth2)
 	d.containerDetachField.SetBackgroundColor(bgColor)
 	d.containerDetachField.SetLabelColor(style.DialogFgColor)
 	d.containerDetachField.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// tty
-	ttyLabel := fmt.Sprintf("%7s:", "tty")
-	d.containerTtyField.SetLabel(ttyLabel)
-	d.containerTtyField.SetLabelWidth(len(timeoutLabel) + 1)
+	d.containerTtyField.SetLabel(i18n.T("tty:"))
+	d.containerTtyField.SetLabelWidth(timeoutLabelWidth)
 	d.containerTtyField.SetBackgroundColor(bgColor)
 	d.containerTtyField.SetLabelColor(style.DialogFgColor)
 	d.containerTtyField.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// remove field
-	removeLabel := fmt.Sprintf("%11s:", "remove")
-	d.containerRemoveField.SetLabel(removeLabel)
-	d.containerRemoveField.SetLabelWidth(len(interactiveLabel) + 1)
+	d.containerRemoveField.SetLabel(i18n.T("remove:"))
+	d.containerRemoveField.SetLabelWidth(checkboxLabelWidth2)
 	d.containerRemoveField.SetBackgroundColor(bgColor)
 	d.containerRemoveField.SetLabelColor(style.DialogFgColor)
 	d.containerRemoveField.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// secrets
 	d.containerSecretField.SetBackgroundColor(style.DialogBgColor)
-	d.containerSecretField.SetLabel(utils.StringToInputLabel("secret:", cntInfoPageLabelWidth))
+	d.containerSecretField.SetLabel(i18n.PadToWidth(i18n.T("secret:"), cntInfoPageLabelWidth))
 	d.containerSecretField.SetFieldStyle(style.InputFieldStyle)
 	d.containerSecretField.SetLabelStyle(style.InputLabelStyle)
 
 	// layout
-	labelPaddings := 4
 	checkBoxLayout1 := tview.NewFlex().SetDirection(tview.FlexColumn)
 
 	checkBoxLayout1.SetBackgroundColor(bgColor)
-	checkBoxLayout1.AddItem(d.containerPrivilegedField, cntInfoPageLabelWidth+labelPaddings, 0, false)
+	checkBoxLayout1.AddItem(d.containerPrivilegedField, 0, 1, false)
+	checkBoxLayout1.AddItem(utils.EmptyBoxSpace(bgColor), 2, 0, false) // spacing
 	checkBoxLayout1.AddItem(d.containerRemoveField, 0, 1, false)
+	checkBoxLayout1.AddItem(utils.EmptyBoxSpace(bgColor), 2, 0, false) // spacing
 	checkBoxLayout1.AddItem(d.containerTimeoutField, 0, 1, false)
 	checkBoxLayout1.AddItem(utils.EmptyBoxSpace(bgColor), 0, 1, true)
 
 	checkBoxLayout2 := tview.NewFlex().SetDirection(tview.FlexColumn)
 
 	checkBoxLayout2.SetBackgroundColor(bgColor)
-	checkBoxLayout2.AddItem(d.containerDetachField, cntInfoPageLabelWidth+labelPaddings, 0, false)
 	checkBoxLayout2.AddItem(d.containerInteractiveField, 0, 1, false)
+	checkBoxLayout2.AddItem(utils.EmptyBoxSpace(bgColor), 2, 0, false) // spacing
+	checkBoxLayout2.AddItem(d.containerDetachField, 0, 1, false)
+	checkBoxLayout2.AddItem(utils.EmptyBoxSpace(bgColor), 2, 0, false) // spacing
 	checkBoxLayout2.AddItem(d.containerTtyField, 0, 1, false)
 	checkBoxLayout2.AddItem(utils.EmptyBoxSpace(bgColor), 0, 1, true)
 
@@ -1264,67 +1300,78 @@ func (d *ContainerCreateDialog) setupContainerInfoPageUI() {
 
 func (d *ContainerCreateDialog) setupEnvironmentPageUI() {
 	bgColor := style.DialogBgColor
-	envPageLabelWidth := 12
+	
+	// Calculate label width for alignment
+	envPageLabelWidth := i18n.CalcMaxWidth(
+		i18n.T("work dir:"),
+		i18n.T("env vars:"),
+		i18n.T("env file:"),
+		i18n.T("env merge:"),
+		i18n.T("unset env:"),
+		i18n.T("env host:"),
+	) + 1 // Add space after label
+	
+	envHostLabelWidth := i18n.GetDisplayWidth(i18n.T("env host:")) + 1
+	unsetEnvAllLabelWidth := i18n.GetDisplayWidth(i18n.T("unsetenv all")) + 1
+	umaskLabelWidth := i18n.GetDisplayWidth(i18n.T("umask:")) + 1
 
 	// environment host
 	d.containerEnvHostField.SetBackgroundColor(style.DialogBgColor)
-	d.containerEnvHostField.SetLabel(utils.StringToInputLabel("env host:", envPageLabelWidth))
+	d.containerEnvHostField.SetLabel(i18n.PadToWidth(i18n.T("env host:"), envHostLabelWidth))
 	d.containerEnvHostField.SetFieldBackgroundColor(style.FieldBackgroundColor)
 	d.containerEnvHostField.SetLabelStyle(style.InputLabelStyle)
 
 	// unset all
-	unsetEnvAllLabel := "unsetenv all"
-	d.containerUnsetEnvAllField.SetLabel(unsetEnvAllLabel)
-	d.containerUnsetEnvAllField.SetLabelWidth(len(unsetEnvAllLabel) + 1)
+	d.containerUnsetEnvAllField.SetLabel(i18n.T("unsetenv all"))
+	d.containerUnsetEnvAllField.SetLabelWidth(unsetEnvAllLabelWidth)
 	d.containerUnsetEnvAllField.SetBackgroundColor(bgColor)
 	d.containerUnsetEnvAllField.SetLabelColor(style.DialogFgColor)
 	d.containerUnsetEnvAllField.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// environment variables
 	d.containerEnvVarsField.SetBackgroundColor(style.DialogBgColor)
-	d.containerEnvVarsField.SetLabel(utils.StringToInputLabel("env vars:", envPageLabelWidth))
+	d.containerEnvVarsField.SetLabel(i18n.PadToWidth(i18n.T("env vars:"), envPageLabelWidth))
 	d.containerEnvVarsField.SetFieldStyle(style.InputFieldStyle)
 	d.containerEnvVarsField.SetLabelStyle(style.InputLabelStyle)
 
 	// environment variables file
 	d.containerEnvFileField.SetBackgroundColor(style.DialogBgColor)
-	d.containerEnvFileField.SetLabel(utils.StringToInputLabel("env file:", envPageLabelWidth))
+	d.containerEnvFileField.SetLabel(i18n.PadToWidth(i18n.T("env file:"), envPageLabelWidth))
 	d.containerEnvFileField.SetFieldStyle(style.InputFieldStyle)
 	d.containerEnvFileField.SetLabelStyle(style.InputLabelStyle)
 
 	// environment merge
 	d.containerEnvMergeField.SetBackgroundColor(style.DialogBgColor)
-	d.containerEnvMergeField.SetLabel(utils.StringToInputLabel("env merge:", envPageLabelWidth))
+	d.containerEnvMergeField.SetLabel(i18n.PadToWidth(i18n.T("env merge:"), envPageLabelWidth))
 	d.containerEnvMergeField.SetFieldStyle(style.InputFieldStyle)
 	d.containerEnvMergeField.SetLabelStyle(style.InputLabelStyle)
 
 	// environment unset variables
 	d.containerUnsetEnvField.SetBackgroundColor(style.DialogBgColor)
-	d.containerUnsetEnvField.SetLabel(utils.StringToInputLabel("unset env:", envPageLabelWidth))
+	d.containerUnsetEnvField.SetLabel(i18n.PadToWidth(i18n.T("unset env:"), envPageLabelWidth))
 	d.containerUnsetEnvField.SetFieldStyle(style.InputFieldStyle)
 	d.containerUnsetEnvField.SetLabelStyle(style.InputLabelStyle)
 
 	// working directory
 	d.containerWorkDirField.SetBackgroundColor(style.DialogBgColor)
-	d.containerWorkDirField.SetLabel(utils.StringToInputLabel("work dir:", envPageLabelWidth))
+	d.containerWorkDirField.SetLabel(i18n.PadToWidth(i18n.T("work dir:"), envPageLabelWidth))
 	d.containerWorkDirField.SetFieldStyle(style.InputFieldStyle)
 	d.containerWorkDirField.SetLabelStyle(style.InputLabelStyle)
 
 	// umask
-	umaskLabel := "umask:"
-
 	d.containerUmaskField.SetBackgroundColor(style.DialogBgColor)
-	d.containerUmaskField.SetLabel(utils.StringToInputLabel(umaskLabel, len(umaskLabel)+1))
+	d.containerUmaskField.SetLabel(i18n.PadToWidth(i18n.T("umask:"), umaskLabelWidth))
 	d.containerUmaskField.SetFieldStyle(style.InputFieldStyle)
 	d.containerUmaskField.SetLabelStyle(style.InputLabelStyle)
 
 	// layout
-	labelPaddings := 4
 	checkBoxLayout := tview.NewFlex().SetDirection(tview.FlexColumn)
 
 	checkBoxLayout.SetBackgroundColor(bgColor)
-	checkBoxLayout.AddItem(d.containerEnvHostField, envPageLabelWidth+labelPaddings, 0, false)
-	checkBoxLayout.AddItem(d.containerUnsetEnvAllField, len(unsetEnvAllLabel)+labelPaddings, 0, false)
+	checkBoxLayout.AddItem(d.containerEnvHostField, envHostLabelWidth+4, 0, false)
+	checkBoxLayout.AddItem(utils.EmptyBoxSpace(bgColor), 2, 0, false) // spacing
+	checkBoxLayout.AddItem(d.containerUnsetEnvAllField, unsetEnvAllLabelWidth+4, 0, false)
+	checkBoxLayout.AddItem(utils.EmptyBoxSpace(bgColor), 2, 0, false) // spacing
 	checkBoxLayout.AddItem(d.containerUmaskField, 0, 1, false)
 	checkBoxLayout.AddItem(utils.EmptyBoxSpace(bgColor), 0, 1, true)
 
@@ -1345,31 +1392,39 @@ func (d *ContainerCreateDialog) setupEnvironmentPageUI() {
 
 func (d *ContainerCreateDialog) setupUserGroupsPageUI() {
 	bgColor := style.DialogBgColor
-	userGroupLabelWidth := 14
+	
+	// Calculate label width for alignment
+	userGroupLabelWidth := i18n.CalcMaxWidth(
+		i18n.T("user:"),
+		i18n.T("host user:"),
+		i18n.T("passwd entry:"),
+		i18n.T("group entry:"),
+	) + 1 // Add space after label
+	
 	userFieldWidth := 30
 
 	// user
 	d.containerUserField.SetBackgroundColor(style.DialogBgColor)
-	d.containerUserField.SetLabel(utils.StringToInputLabel("user:", userGroupLabelWidth))
+	d.containerUserField.SetLabel(i18n.PadToWidth(i18n.T("user:"), userGroupLabelWidth))
 	d.containerUserField.SetFieldStyle(style.InputFieldStyle)
 	d.containerUserField.SetLabelStyle(style.InputLabelStyle)
 	d.containerUserField.SetFieldWidth(userFieldWidth)
 
 	// host users
 	d.containerHostUsersField.SetBackgroundColor(style.DialogBgColor)
-	d.containerHostUsersField.SetLabel(utils.StringToInputLabel("host user:", userGroupLabelWidth))
+	d.containerHostUsersField.SetLabel(i18n.PadToWidth(i18n.T("host user:"), userGroupLabelWidth))
 	d.containerHostUsersField.SetFieldStyle(style.InputFieldStyle)
 	d.containerHostUsersField.SetLabelStyle(style.InputLabelStyle)
 
 	// passwd entry
 	d.containerPasswdEntryField.SetBackgroundColor(style.DialogBgColor)
-	d.containerPasswdEntryField.SetLabel(utils.StringToInputLabel("passwd entry:", userGroupLabelWidth))
+	d.containerPasswdEntryField.SetLabel(i18n.PadToWidth(i18n.T("passwd entry:"), userGroupLabelWidth))
 	d.containerPasswdEntryField.SetFieldStyle(style.InputFieldStyle)
 	d.containerPasswdEntryField.SetLabelStyle(style.InputLabelStyle)
 
 	// group entry
 	d.containerGroupEntryField.SetBackgroundColor(style.DialogBgColor)
-	d.containerGroupEntryField.SetLabel(utils.StringToInputLabel("group entry:", userGroupLabelWidth))
+	d.containerGroupEntryField.SetLabel(i18n.PadToWidth(i18n.T("group entry:"), userGroupLabelWidth))
 	d.containerGroupEntryField.SetFieldStyle(style.InputFieldStyle)
 	d.containerGroupEntryField.SetLabelStyle(style.InputLabelStyle)
 
@@ -1386,23 +1441,29 @@ func (d *ContainerCreateDialog) setupUserGroupsPageUI() {
 
 func (d *ContainerCreateDialog) setupDNSPageUI() {
 	bgColor := style.DialogBgColor
-	dnsPageLabelWidth := 13
+	
+	// Calculate label width for alignment
+	dnsPageLabelWidth := i18n.CalcMaxWidth(
+		i18n.T("dns servers:"),
+		i18n.T("dns options:"),
+		i18n.T("dns search:"),
+	) + 1 // Add space after label
 
-	// hostname field
+	// dns servers field
 	d.containerDNSServersField.SetBackgroundColor(style.DialogBgColor)
-	d.containerDNSServersField.SetLabel(utils.StringToInputLabel("dns servers:", dnsPageLabelWidth))
+	d.containerDNSServersField.SetLabel(i18n.PadToWidth(i18n.T("dns servers:"), dnsPageLabelWidth))
 	d.containerDNSServersField.SetFieldStyle(style.InputFieldStyle)
 	d.containerDNSServersField.SetLabelStyle(style.InputLabelStyle)
 
-	// IP field
+	// dns options field
 	d.containerDNSOptionsField.SetBackgroundColor(style.DialogBgColor)
-	d.containerDNSOptionsField.SetLabel(utils.StringToInputLabel("dns options:", dnsPageLabelWidth))
+	d.containerDNSOptionsField.SetLabel(i18n.PadToWidth(i18n.T("dns options:"), dnsPageLabelWidth))
 	d.containerDNSOptionsField.SetFieldStyle(style.InputFieldStyle)
 	d.containerDNSOptionsField.SetLabelStyle(style.InputLabelStyle)
 
-	// mac field
+	// dns search field
 	d.containerDNSSearchField.SetBackgroundColor(style.DialogBgColor)
-	d.containerDNSSearchField.SetLabel(utils.StringToInputLabel("dns search:", dnsPageLabelWidth))
+	d.containerDNSSearchField.SetLabel(i18n.PadToWidth(i18n.T("dns search:"), dnsPageLabelWidth))
 	d.containerDNSSearchField.SetFieldStyle(style.InputFieldStyle)
 	d.containerDNSSearchField.SetLabelStyle(style.InputLabelStyle)
 
@@ -1419,48 +1480,74 @@ func (d *ContainerCreateDialog) setupHealthPageUI() {
 	bgColor := style.DialogBgColor
 	ddUnselectedStyle := style.DropDownUnselected
 	ddselectedStyle := style.DropDownSelected
-	healthPageLabelWidth := 14
-	healthPageSecColLabelWidth := 18
-	healthPageMultiRowFieldWidth := 7
+	
+	// Calculate label widths for alignment
+	healthPageLabelWidth := i18n.CalcMaxWidth(
+		i18n.T("command:"),
+		i18n.T("startup cmd:"),
+		i18n.T("log dest:"),
+		i18n.T("max log size:"),
+		i18n.T("interval:"),
+		i18n.T("retries:"),
+		i18n.T("timeout:"),
+	) + 1
+	
+	healthPageSecColLabelWidth := i18n.CalcMaxWidth(
+		i18n.T("max log count:"),
+		i18n.T("startup interval:"),
+		i18n.T("startup retries:"),
+		i18n.T("startup timeout:"),
+	) + 1
+	
+	healthPageThirdColLabelWidth := i18n.CalcMaxWidth(
+		i18n.T("on failure:"),
+		i18n.T("start period:"),
+		i18n.T("startup success:"),
+	) + 1
+	
+	healthPageMultiRowFieldWidth := 6 // Reduced to prevent overflow
 
 	// health cmd
 	d.containerHealthCmdField.SetBackgroundColor(style.DialogBgColor)
-	d.containerHealthCmdField.SetLabel(utils.StringToInputLabel("command:", healthPageLabelWidth))
+	d.containerHealthCmdField.SetLabel(i18n.PadToWidth(i18n.T("command:"), healthPageLabelWidth))
 	d.containerHealthCmdField.SetFieldStyle(style.InputFieldStyle)
 	d.containerHealthCmdField.SetLabelStyle(style.InputLabelStyle)
 
 	// startup cmd
 	d.containerHealthStartupCmdField.SetBackgroundColor(style.DialogBgColor)
-	d.containerHealthStartupCmdField.SetLabel(utils.StringToInputLabel("startup cmd:", healthPageLabelWidth))
+	d.containerHealthStartupCmdField.SetLabel(i18n.PadToWidth(i18n.T("startup cmd:"), healthPageLabelWidth))
 	d.containerHealthStartupCmdField.SetFieldStyle(style.InputFieldStyle)
 	d.containerHealthStartupCmdField.SetLabelStyle(style.InputLabelStyle)
 
 	// log dest
 	d.containerHealthLogDestField.SetBackgroundColor(style.DialogBgColor)
-	d.containerHealthLogDestField.SetLabel(utils.StringToInputLabel("log dest:", healthPageLabelWidth))
+	d.containerHealthLogDestField.SetLabel(i18n.PadToWidth(i18n.T("log dest:"), healthPageLabelWidth))
 	d.containerHealthLogDestField.SetFieldStyle(style.InputFieldStyle)
 	d.containerHealthLogDestField.SetLabelStyle(style.InputLabelStyle)
 
 	// multi primitive row01
 	// max log size
 	d.containerHealthMaxLogSizeField.SetBackgroundColor(style.DialogBgColor)
-	d.containerHealthMaxLogSizeField.SetLabel(utils.StringToInputLabel("max log size:", healthPageLabelWidth))
+	d.containerHealthMaxLogSizeField.SetLabel(i18n.PadToWidth(i18n.T("max log size:"), healthPageLabelWidth))
 	d.containerHealthMaxLogSizeField.SetFieldStyle(style.InputFieldStyle)
 	d.containerHealthMaxLogSizeField.SetLabelStyle(style.InputLabelStyle)
 	d.containerHealthMaxLogSizeField.SetFieldWidth(healthPageMultiRowFieldWidth)
 
 	// max log count
 	d.containerHealthMaxLogCountField.SetBackgroundColor(style.DialogBgColor)
-	d.containerHealthMaxLogCountField.SetLabel(utils.StringToInputLabel("max log count:", healthPageSecColLabelWidth))
+	d.containerHealthMaxLogCountField.SetLabel(i18n.PadToWidth(i18n.T("max log count:"), healthPageSecColLabelWidth))
 	d.containerHealthMaxLogCountField.SetFieldStyle(style.InputFieldStyle)
 	d.containerHealthMaxLogCountField.SetLabelStyle(style.InputLabelStyle)
 	d.containerHealthMaxLogCountField.SetFieldWidth(healthPageMultiRowFieldWidth)
 
 	// on-failure
-	onfailureLabel := fmt.Sprintf("%16s: ", "on failure")
-
-	d.containerHealthOnFailureField.SetOptions([]string{"none", "kill", "restart", "stop"}, nil)
-	d.containerHealthOnFailureField.SetLabel(onfailureLabel)
+	d.containerHealthOnFailureField.SetOptions([]string{
+		i18n.T("none"),
+		i18n.T("kill"),
+		i18n.T("restart"),
+		i18n.T("stop"),
+	}, nil)
+	d.containerHealthOnFailureField.SetLabel(i18n.PadToWidth(i18n.T("on failure:"), healthPageThirdColLabelWidth))
 	d.containerHealthOnFailureField.SetBackgroundColor(bgColor)
 	d.containerHealthOnFailureField.SetLabelColor(style.DialogFgColor)
 	d.containerHealthOnFailureField.SetListStyles(ddUnselectedStyle, ddselectedStyle)
@@ -1468,92 +1555,92 @@ func (d *ContainerCreateDialog) setupHealthPageUI() {
 	d.containerHealthOnFailureField.SetFieldStyle(style.InputFieldStyle)
 
 	multiItemRow01 := tview.NewFlex().SetDirection(tview.FlexColumn)
-	multiItemRow01.AddItem(d.containerHealthMaxLogSizeField, 0, 1, true)
-	multiItemRow01.AddItem(d.containerHealthMaxLogCountField, 0, 1, true)
-	multiItemRow01.AddItem(d.containerHealthOnFailureField, 0, 1, true)
+	multiItemRow01.AddItem(d.containerHealthMaxLogSizeField, 0, 3, true) // increased flex weight
+	multiItemRow01.AddItem(utils.EmptyBoxSpace(bgColor), 2, 0, false) // spacing
+	multiItemRow01.AddItem(d.containerHealthMaxLogCountField, 0, 3, true) // increased flex weight
+	multiItemRow01.AddItem(utils.EmptyBoxSpace(bgColor), 2, 0, false) // spacing
+	multiItemRow01.AddItem(d.containerHealthOnFailureField, 0, 3, true) // increased flex weight
 	multiItemRow01.SetBackgroundColor(bgColor)
 
 	// multi primitive row02
 	// interval
 	d.containerHealthIntervalField.SetBackgroundColor(style.DialogBgColor)
-	d.containerHealthIntervalField.SetLabel(utils.StringToInputLabel("interval:", healthPageLabelWidth))
+	d.containerHealthIntervalField.SetLabel(i18n.PadToWidth(i18n.T("interval:"), healthPageLabelWidth))
 	d.containerHealthIntervalField.SetFieldStyle(style.InputFieldStyle)
 	d.containerHealthIntervalField.SetLabelStyle(style.InputLabelStyle)
 	d.containerHealthIntervalField.SetFieldWidth(healthPageMultiRowFieldWidth)
 
 	// startup interval
 	d.containerHealthStartupIntervalField.SetBackgroundColor(style.DialogBgColor)
-	d.containerHealthStartupIntervalField.SetLabel(utils.StringToInputLabel(
-		"startup interval:",
-		healthPageSecColLabelWidth,
-	))
+	d.containerHealthStartupIntervalField.SetLabel(i18n.PadToWidth(i18n.T("startup interval:"), healthPageSecColLabelWidth))
 	d.containerHealthStartupIntervalField.SetFieldStyle(style.InputFieldStyle)
 	d.containerHealthStartupIntervalField.SetLabelStyle(style.InputLabelStyle)
 	d.containerHealthStartupIntervalField.SetFieldWidth(healthPageMultiRowFieldWidth)
 
 	// start period
-	startPeroidLabel := fmt.Sprintf("%16s: ", "start period")
-
 	d.containerHealthStartPeriodField.SetBackgroundColor(style.DialogBgColor)
-	d.containerHealthStartPeriodField.SetLabel(utils.StringToInputLabel(startPeroidLabel, len(startPeroidLabel)))
+	d.containerHealthStartPeriodField.SetLabel(i18n.PadToWidth(i18n.T("start period:"), healthPageThirdColLabelWidth))
 	d.containerHealthStartPeriodField.SetFieldStyle(style.InputFieldStyle)
 	d.containerHealthStartPeriodField.SetLabelStyle(style.InputLabelStyle)
 	d.containerHealthStartPeriodField.SetFieldWidth(healthPageMultiRowFieldWidth)
 
 	multiItemRow02 := tview.NewFlex().SetDirection(tview.FlexColumn)
-	multiItemRow02.AddItem(d.containerHealthIntervalField, 0, 1, true)
-	multiItemRow02.AddItem(d.containerHealthStartupIntervalField, 0, 1, true)
-	multiItemRow02.AddItem(d.containerHealthStartPeriodField, 0, 1, true)
+	multiItemRow02.AddItem(d.containerHealthIntervalField, 0, 3, true) // increased flex weight
+	multiItemRow02.AddItem(utils.EmptyBoxSpace(bgColor), 2, 0, false) // spacing
+	multiItemRow02.AddItem(d.containerHealthStartupIntervalField, 0, 3, true) // increased flex weight
+	multiItemRow02.AddItem(utils.EmptyBoxSpace(bgColor), 2, 0, false) // spacing
+	multiItemRow02.AddItem(d.containerHealthStartPeriodField, 0, 3, true) // increased flex weight
 	multiItemRow02.SetBackgroundColor(bgColor)
 
 	// multi primitive row03
 	// retires
 	d.containerHealthRetriesField.SetBackgroundColor(style.DialogBgColor)
-	d.containerHealthRetriesField.SetLabel(utils.StringToInputLabel("retries:", healthPageLabelWidth))
+	d.containerHealthRetriesField.SetLabel(i18n.PadToWidth(i18n.T("retries:"), healthPageLabelWidth))
 	d.containerHealthRetriesField.SetFieldStyle(style.InputFieldStyle)
 	d.containerHealthRetriesField.SetLabelStyle(style.InputLabelStyle)
 	d.containerHealthRetriesField.SetFieldWidth(healthPageMultiRowFieldWidth)
 
 	// startup retries
 	d.containerHealthStartupRetriesField.SetBackgroundColor(style.DialogBgColor)
-	d.containerHealthStartupRetriesField.SetLabel(utils.StringToInputLabel("startup retries:", healthPageSecColLabelWidth))
+	d.containerHealthStartupRetriesField.SetLabel(i18n.PadToWidth(i18n.T("startup retries:"), healthPageSecColLabelWidth))
 	d.containerHealthStartupRetriesField.SetFieldStyle(style.InputFieldStyle)
 	d.containerHealthStartupRetriesField.SetLabelStyle(style.InputLabelStyle)
 	d.containerHealthStartupRetriesField.SetFieldWidth(healthPageMultiRowFieldWidth)
 
 	// startup success
-	startupSuccessLabel := fmt.Sprintf("%16s: ", "startup success")
-
 	d.containerHealthStartupSuccessField.SetBackgroundColor(style.DialogBgColor)
-	d.containerHealthStartupSuccessField.SetLabel(utils.StringToInputLabel(startupSuccessLabel, len(startupSuccessLabel)))
+	d.containerHealthStartupSuccessField.SetLabel(i18n.PadToWidth(i18n.T("startup success:"), healthPageThirdColLabelWidth))
 	d.containerHealthStartupSuccessField.SetFieldStyle(style.InputFieldStyle)
 	d.containerHealthStartupSuccessField.SetLabelStyle(style.InputLabelStyle)
 	d.containerHealthStartupSuccessField.SetFieldWidth(healthPageMultiRowFieldWidth)
 
 	multiItemRow03 := tview.NewFlex().SetDirection(tview.FlexColumn)
-	multiItemRow03.AddItem(d.containerHealthRetriesField, 0, 1, true)
-	multiItemRow03.AddItem(d.containerHealthStartupRetriesField, 0, 1, true)
-	multiItemRow03.AddItem(d.containerHealthStartupSuccessField, 0, 1, true)
+	multiItemRow03.AddItem(d.containerHealthRetriesField, 0, 3, true) // increased flex weight
+	multiItemRow03.AddItem(utils.EmptyBoxSpace(bgColor), 2, 0, false) // spacing
+	multiItemRow03.AddItem(d.containerHealthStartupRetriesField, 0, 3, true) // increased flex weight
+	multiItemRow03.AddItem(utils.EmptyBoxSpace(bgColor), 2, 0, false) // spacing
+	multiItemRow03.AddItem(d.containerHealthStartupSuccessField, 0, 3, true) // increased flex weight
 	multiItemRow03.SetBackgroundColor(bgColor)
 
 	// multi primitive row04
 	// timeout
 	d.containerHealthTimeoutField.SetBackgroundColor(style.DialogBgColor)
-	d.containerHealthTimeoutField.SetLabel(utils.StringToInputLabel("timeout:", healthPageLabelWidth))
+	d.containerHealthTimeoutField.SetLabel(i18n.PadToWidth(i18n.T("timeout:"), healthPageLabelWidth))
 	d.containerHealthTimeoutField.SetFieldStyle(style.InputFieldStyle)
 	d.containerHealthTimeoutField.SetLabelStyle(style.InputLabelStyle)
 	d.containerHealthTimeoutField.SetFieldWidth(healthPageMultiRowFieldWidth)
 
 	// startup timeout
 	d.containerHealthStartupTimeoutField.SetBackgroundColor(style.DialogBgColor)
-	d.containerHealthStartupTimeoutField.SetLabel(utils.StringToInputLabel("startup timeout:", healthPageSecColLabelWidth))
+	d.containerHealthStartupTimeoutField.SetLabel(i18n.PadToWidth(i18n.T("startup timeout:"), healthPageSecColLabelWidth))
 	d.containerHealthStartupTimeoutField.SetFieldStyle(style.InputFieldStyle)
 	d.containerHealthStartupTimeoutField.SetLabelStyle(style.InputLabelStyle)
 	d.containerHealthStartupTimeoutField.SetFieldWidth(healthPageMultiRowFieldWidth)
 
 	multiItemRow04 := tview.NewFlex().SetDirection(tview.FlexColumn)
-	multiItemRow04.AddItem(d.containerHealthTimeoutField, 0, 1, true)
-	multiItemRow04.AddItem(d.containerHealthStartupTimeoutField, 0, 1, true)
+	multiItemRow04.AddItem(d.containerHealthTimeoutField, 0, 3, true) // increased flex weight
+	multiItemRow04.AddItem(utils.EmptyBoxSpace(bgColor), 2, 0, false) // spacing
+	multiItemRow04.AddItem(d.containerHealthStartupTimeoutField, 0, 3, true) // increased flex weight
 	multiItemRow04.AddItem(utils.EmptyBoxSpace(bgColor), 0, 1, true)
 	multiItemRow04.SetBackgroundColor(bgColor)
 
@@ -1579,28 +1666,35 @@ func (d *ContainerCreateDialog) setupNetworkPageUI() {
 	bgColor := style.DialogBgColor
 	ddUnselectedStyle := style.DropDownUnselected
 	ddselectedStyle := style.DropDownSelected
-	networkingPageLabelWidth := 13
+	
+	// Calculate label width for alignment
+	networkingPageLabelWidth := i18n.CalcMaxWidth(
+		i18n.T("hostname:"),
+		i18n.T("ip address:"),
+		i18n.T("mac address:"),
+		i18n.T("network:"),
+	) + 1 // Add space after label
 
 	// hostname field
 	d.containerHostnameField.SetBackgroundColor(style.DialogBgColor)
-	d.containerHostnameField.SetLabel(utils.StringToInputLabel("hostname:", networkingPageLabelWidth))
+	d.containerHostnameField.SetLabel(i18n.PadToWidth(i18n.T("hostname:"), networkingPageLabelWidth))
 	d.containerHostnameField.SetFieldStyle(style.InputFieldStyle)
 	d.containerHostnameField.SetLabelStyle(style.InputLabelStyle)
 
 	// IP field
 	d.containerIPAddrField.SetBackgroundColor(style.DialogBgColor)
-	d.containerIPAddrField.SetLabel(utils.StringToInputLabel("ip address:", networkingPageLabelWidth))
+	d.containerIPAddrField.SetLabel(i18n.PadToWidth(i18n.T("ip address:"), networkingPageLabelWidth))
 	d.containerIPAddrField.SetFieldStyle(style.InputFieldStyle)
 	d.containerIPAddrField.SetLabelStyle(style.InputLabelStyle)
 
 	// mac field
 	d.containerMacAddrField.SetBackgroundColor(style.DialogBgColor)
-	d.containerMacAddrField.SetLabel(utils.StringToInputLabel("mac address:", networkingPageLabelWidth))
+	d.containerMacAddrField.SetLabel(i18n.PadToWidth(i18n.T("mac address:"), networkingPageLabelWidth))
 	d.containerMacAddrField.SetFieldStyle(style.InputFieldStyle)
 	d.containerMacAddrField.SetLabelStyle(style.InputLabelStyle)
 
 	// network field
-	d.containerNetworkField.SetLabel("network:")
+	d.containerNetworkField.SetLabel(i18n.T("network:"))
 	d.containerNetworkField.SetLabelWidth(networkingPageLabelWidth)
 	d.containerNetworkField.SetBackgroundColor(bgColor)
 	d.containerNetworkField.SetLabelColor(style.DialogFgColor)
@@ -1622,25 +1716,28 @@ func (d *ContainerCreateDialog) setupNetworkPageUI() {
 
 func (d *ContainerCreateDialog) setupPortsPageUI() {
 	bgColor := style.DialogBgColor
-	portPageLabelWidth := 15
+	
+	// Calculate label width for alignment
+	portPageLabelWidth := i18n.CalcMaxWidth(
+		i18n.T("publish ports:"),
+		i18n.T("expose ports:"),
+		i18n.T("publish all"),
+	) + 1 // Add space after label
 
-	inputFieldItems := []struct {
-		label  string
-		widget *tview.InputField
-	}{
-		{label: "publish ports:", widget: d.containerPortPublishField},
-		{label: "expose ports:", widget: d.containerPortExposeField},
-	}
+	// publish ports field
+	d.containerPortPublishField.SetBackgroundColor(style.DialogBgColor)
+	d.containerPortPublishField.SetLabel(i18n.PadToWidth(i18n.T("publish ports:"), portPageLabelWidth))
+	d.containerPortPublishField.SetFieldStyle(style.InputFieldStyle)
+	d.containerPortPublishField.SetLabelStyle(style.InputLabelStyle)
 
-	for _, inputField := range inputFieldItems {
-		inputField.widget.SetBackgroundColor(style.DialogBgColor)
-		inputField.widget.SetLabel(utils.StringToInputLabel(inputField.label, portPageLabelWidth))
-		inputField.widget.SetFieldStyle(style.InputFieldStyle)
-		inputField.widget.SetLabelStyle(style.InputLabelStyle)
-	}
+	// expose ports field
+	d.containerPortExposeField.SetBackgroundColor(style.DialogBgColor)
+	d.containerPortExposeField.SetLabel(i18n.PadToWidth(i18n.T("expose ports:"), portPageLabelWidth))
+	d.containerPortExposeField.SetFieldStyle(style.InputFieldStyle)
+	d.containerPortExposeField.SetLabelStyle(style.InputLabelStyle)
 
 	// publish all field
-	d.ContainerPortPublishAllField.SetLabel("publish all ")
+	d.ContainerPortPublishAllField.SetLabel(i18n.T("publish all"))
 	d.ContainerPortPublishAllField.SetLabelWidth(portPageLabelWidth)
 	d.ContainerPortPublishAllField.SetBackgroundColor(bgColor)
 	d.ContainerPortPublishAllField.SetLabelColor(style.DialogFgColor)
@@ -1657,40 +1754,50 @@ func (d *ContainerCreateDialog) setupPortsPageUI() {
 
 func (d *ContainerCreateDialog) setupSecurityPageUI() {
 	bgColor := style.DialogBgColor
-	securityOptsLabelWidth := 10
+	
+	// Calculate label width for alignment
+	securityOptsLabelWidth := i18n.CalcMaxWidth(
+		i18n.T("label:"),
+		i18n.T("apparmor:"),
+		i18n.T("seccomp:"),
+		i18n.T("mask:"),
+		i18n.T("unmask:"),
+		i18n.T("no new privileges"),
+	) + 1 // Add space after label
 
 	// selinux label
 	d.containerSecLabelField.SetBackgroundColor(style.DialogBgColor)
-	d.containerSecLabelField.SetLabel(utils.StringToInputLabel("label:", securityOptsLabelWidth))
+	d.containerSecLabelField.SetLabel(i18n.PadToWidth(i18n.T("label:"), securityOptsLabelWidth))
 	d.containerSecLabelField.SetFieldStyle(style.InputFieldStyle)
 	d.containerSecLabelField.SetLabelStyle(style.InputLabelStyle)
 
 	// apparmor
 	d.containerSecApparmorField.SetBackgroundColor(style.DialogBgColor)
-	d.containerSecApparmorField.SetLabel(utils.StringToInputLabel("apparmor:", securityOptsLabelWidth))
+	d.containerSecApparmorField.SetLabel(i18n.PadToWidth(i18n.T("apparmor:"), securityOptsLabelWidth))
 	d.containerSecApparmorField.SetFieldStyle(style.InputFieldStyle)
 	d.containerSecApparmorField.SetLabelStyle(style.InputLabelStyle)
 
 	// seccomp
 	d.containerSeccompField.SetBackgroundColor(style.DialogBgColor)
-	d.containerSeccompField.SetLabel(utils.StringToInputLabel("seccomp:", securityOptsLabelWidth))
+	d.containerSeccompField.SetLabel(i18n.PadToWidth(i18n.T("seccomp:"), securityOptsLabelWidth))
 	d.containerSeccompField.SetFieldStyle(style.InputFieldStyle)
 	d.containerSeccompField.SetLabelStyle(style.InputLabelStyle)
 
 	// mask
 	d.containerSecMaskField.SetBackgroundColor(style.DialogBgColor)
-	d.containerSecMaskField.SetLabel(utils.StringToInputLabel("mask:", securityOptsLabelWidth))
+	d.containerSecMaskField.SetLabel(i18n.PadToWidth(i18n.T("mask:"), securityOptsLabelWidth))
 	d.containerSecMaskField.SetFieldStyle(style.InputFieldStyle)
 	d.containerSecMaskField.SetLabelStyle(style.InputLabelStyle)
 
 	// unmask
 	d.containerSecUnmaskField.SetBackgroundColor(style.DialogBgColor)
-	d.containerSecUnmaskField.SetLabel(utils.StringToInputLabel("unmask:", securityOptsLabelWidth))
+	d.containerSecUnmaskField.SetLabel(i18n.PadToWidth(i18n.T("unmask:"), securityOptsLabelWidth))
 	d.containerSecUnmaskField.SetFieldStyle(style.InputFieldStyle)
 	d.containerSecUnmaskField.SetLabelStyle(style.InputLabelStyle)
 
 	// no-new-privileges
-	d.containerSecNoNewPrivField.SetLabel("no new privileges ")
+	d.containerSecNoNewPrivField.SetLabel(i18n.T("no new privileges"))
+	d.containerSecNoNewPrivField.SetLabelWidth(securityOptsLabelWidth)
 	d.containerSecNoNewPrivField.SetBackgroundColor(bgColor)
 	d.containerSecNoNewPrivField.SetLabelColor(style.DialogFgColor)
 	d.containerSecNoNewPrivField.SetBackgroundColor(bgColor)
@@ -1716,16 +1823,22 @@ func (d *ContainerCreateDialog) setupVolumePageUI() {
 	bgColor := style.DialogBgColor
 	ddUnselectedStyle := style.DropDownUnselected
 	ddselectedStyle := style.DropDownSelected
-	volumePageLabelWidth := 14
+	
+	// Calculate label width for alignment
+	volumePageLabelWidth := i18n.CalcMaxWidth(
+		i18n.T("volume:"),
+		i18n.T("image volume:"),
+		i18n.T("mount:"),
+	) + 1 // Add space after label
 
 	// volume
 	d.containerVolumeField.SetBackgroundColor(style.DialogBgColor)
-	d.containerVolumeField.SetLabel(utils.StringToInputLabel("volume:", volumePageLabelWidth))
+	d.containerVolumeField.SetLabel(i18n.PadToWidth(i18n.T("volume:"), volumePageLabelWidth))
 	d.containerVolumeField.SetFieldStyle(style.InputFieldStyle)
 	d.containerVolumeField.SetLabelStyle(style.InputLabelStyle)
 
 	// image volume
-	d.containerImageVolumeField.SetLabel("image volume:")
+	d.containerImageVolumeField.SetLabel(i18n.T("image volume:"))
 	d.containerImageVolumeField.SetLabelWidth(volumePageLabelWidth)
 	d.containerImageVolumeField.SetBackgroundColor(bgColor)
 	d.containerImageVolumeField.SetLabelColor(style.DialogFgColor)
@@ -1735,7 +1848,7 @@ func (d *ContainerCreateDialog) setupVolumePageUI() {
 
 	// mounts
 	d.containerMountField.SetBackgroundColor(style.DialogBgColor)
-	d.containerMountField.SetLabel(utils.StringToInputLabel("mount:", volumePageLabelWidth))
+	d.containerMountField.SetLabel(i18n.PadToWidth(i18n.T("mount:"), volumePageLabelWidth))
 	d.containerMountField.SetFieldStyle(style.InputFieldStyle)
 	d.containerMountField.SetLabelStyle(style.InputLabelStyle)
 
@@ -1751,38 +1864,53 @@ func (d *ContainerCreateDialog) setupVolumePageUI() {
 
 func (d *ContainerCreateDialog) setupResourcePageUI() {
 	bgColor := style.DialogBgColor
-	resourcePageLabelWidth := 13
+	
+	// Calculate label widths for alignment
+	resourcePageLabelWidth := i18n.CalcMaxWidth(
+		i18n.T("memory:"),
+		i18n.T("memory swap:"),
+		i18n.T("cpus:"),
+		i18n.T("cpu period:"),
+		i18n.T("cpu quota:"),
+		i18n.T("cpuset cpus:"),
+		i18n.T("shm size:"),
+	) + 1
+	
+	resourcePageSecColLabelWidth := i18n.CalcMaxWidth(
+		i18n.T("memory reservation:"),
+		i18n.T("memory swappiness:"),
+		i18n.T("cpu shares:"),
+		i18n.T("cpu rt period:"),
+		i18n.T("cpu rt runtime:"),
+		i18n.T("cpuset mems:"),
+		i18n.T("shm size systemd:"),
+	) + 1
+	
 	inputFieldWidth := 18
-
-	getSecondColLabel := func(label string) string {
-		return fmt.Sprintf("%18s:", label)
-	}
 
 	// memory
 	d.containerMemoryField.SetBackgroundColor(style.DialogBgColor)
-	d.containerMemoryField.SetLabel(utils.StringToInputLabel("memory:", resourcePageLabelWidth))
+	d.containerMemoryField.SetLabel(i18n.PadToWidth(i18n.T("memory:"), resourcePageLabelWidth))
 	d.containerMemoryField.SetFieldStyle(style.InputFieldStyle)
 	d.containerMemoryField.SetLabelStyle(style.InputLabelStyle)
 	d.containerMemoryField.SetFieldWidth(inputFieldWidth)
 
 	// memory reservation
-	memResLabel := "memory reservation:"
-
 	d.containerMemoryReservationField.SetBackgroundColor(style.DialogBgColor)
-	d.containerMemoryReservationField.SetLabel(utils.StringToInputLabel(memResLabel, len(memResLabel)+1))
+	d.containerMemoryReservationField.SetLabel(i18n.PadToWidth(i18n.T("memory reservation:"), resourcePageSecColLabelWidth))
 	d.containerMemoryReservationField.SetFieldStyle(style.InputFieldStyle)
 	d.containerMemoryReservationField.SetLabelStyle(style.InputLabelStyle)
 
 	// memory swap
 	d.containerMemorySwapField.SetBackgroundColor(style.DialogBgColor)
-	d.containerMemorySwapField.SetLabel(utils.StringToInputLabel("memory swap:", resourcePageLabelWidth))
+	d.containerMemorySwapField.SetLabel(i18n.PadToWidth(i18n.T("memory swap:"), resourcePageLabelWidth))
 	d.containerMemorySwapField.SetFieldStyle(style.InputFieldStyle)
 	d.containerMemorySwapField.SetLabelStyle(style.InputLabelStyle)
 	d.containerMemorySwapField.SetFieldWidth(inputFieldWidth)
 
 	// memory swappiness
 	d.containerMemorySwappinessField.SetBackgroundColor(style.DialogBgColor)
-	d.containerMemorySwappinessField.SetLabel(utils.StringToInputLabel(" memory swappiness:", len(memResLabel)+1))
+	d.containerMemorySwappinessField.SetLabel(i18n.PadToWidth(i18n.T("memory swappiness:"), resourcePageSecColLabelWidth))
 	d.containerMemorySwappinessField.SetFieldStyle(style.InputFieldStyle)
 	d.containerMemorySwappinessField.SetLabelStyle(style.InputLabelStyle)
 
@@ -1802,14 +1930,14 @@ func (d *ContainerCreateDialog) setupResourcePageUI() {
 
 	// cpus
 	d.containerCPUsField.SetBackgroundColor(style.DialogBgColor)
-	d.containerCPUsField.SetLabel(utils.StringToInputLabel("cpus:", resourcePageLabelWidth))
+	d.containerCPUsField.SetLabel(i18n.PadToWidth(i18n.T("cpus:"), resourcePageLabelWidth))
 	d.containerCPUsField.SetFieldStyle(style.InputFieldStyle)
 	d.containerCPUsField.SetLabelStyle(style.InputLabelStyle)
 	d.containerCPUsField.SetFieldWidth(inputFieldWidth)
 
 	// cpu shares
 	d.containerCPUSharesField.SetBackgroundColor(style.DialogBgColor)
-	d.containerCPUSharesField.SetLabel(utils.StringToInputLabel(getSecondColLabel("cpu shares"), len(memResLabel)+1))
+	d.containerCPUSharesField.SetLabel(i18n.PadToWidth(i18n.T("cpu shares:"), resourcePageSecColLabelWidth))
 	d.containerCPUSharesField.SetFieldStyle(style.InputFieldStyle)
 	d.containerCPUSharesField.SetLabelStyle(style.InputLabelStyle)
 
@@ -1822,14 +1950,14 @@ func (d *ContainerCreateDialog) setupResourcePageUI() {
 
 	// cpus period
 	d.containerCPUPeriodField.SetBackgroundColor(style.DialogBgColor)
-	d.containerCPUPeriodField.SetLabel(utils.StringToInputLabel("cpu period:", resourcePageLabelWidth))
+	d.containerCPUPeriodField.SetLabel(i18n.PadToWidth(i18n.T("cpu period:"), resourcePageLabelWidth))
 	d.containerCPUPeriodField.SetFieldStyle(style.InputFieldStyle)
 	d.containerCPUPeriodField.SetLabelStyle(style.InputLabelStyle)
 	d.containerCPUPeriodField.SetFieldWidth(inputFieldWidth)
 
 	// cpu rt period
 	d.containerCPURtPeriodField.SetBackgroundColor(style.DialogBgColor)
-	d.containerCPURtPeriodField.SetLabel(utils.StringToInputLabel(getSecondColLabel("cpu rt period"), len(memResLabel)+1))
+	d.containerCPURtPeriodField.SetLabel(i18n.PadToWidth(i18n.T("cpu rt period:"), resourcePageSecColLabelWidth))
 	d.containerCPURtPeriodField.SetFieldStyle(style.InputFieldStyle)
 	d.containerCPURtPeriodField.SetLabelStyle(style.InputLabelStyle)
 
@@ -1842,17 +1970,14 @@ func (d *ContainerCreateDialog) setupResourcePageUI() {
 
 	// cpus quota
 	d.containerCPUQuotaField.SetBackgroundColor(style.DialogBgColor)
-	d.containerCPUQuotaField.SetLabel(utils.StringToInputLabel("cpu quota:", resourcePageLabelWidth))
+	d.containerCPUQuotaField.SetLabel(i18n.PadToWidth(i18n.T("cpu quota:"), resourcePageLabelWidth))
 	d.containerCPUQuotaField.SetFieldStyle(style.InputFieldStyle)
 	d.containerCPUQuotaField.SetLabelStyle(style.InputLabelStyle)
 	d.containerCPUQuotaField.SetFieldWidth(inputFieldWidth)
 
 	// cpu rt runtime
 	d.containerCPURtRuntimeField.SetBackgroundColor(style.DialogBgColor)
-	d.containerCPURtRuntimeField.SetLabel(
-		utils.StringToInputLabel(getSecondColLabel("cpu rt runtime"),
-			len(memResLabel)+1,
-		))
+	d.containerCPURtRuntimeField.SetLabel(i18n.PadToWidth(i18n.T("cpu rt runtime:"), resourcePageSecColLabelWidth))
 	d.containerCPURtRuntimeField.SetFieldStyle(style.InputFieldStyle)
 	d.containerCPURtRuntimeField.SetLabelStyle(style.InputLabelStyle)
 
@@ -1865,14 +1990,14 @@ func (d *ContainerCreateDialog) setupResourcePageUI() {
 
 	// cpuset cpus
 	d.containerCPUSetCPUsField.SetBackgroundColor(style.DialogBgColor)
-	d.containerCPUSetCPUsField.SetLabel(utils.StringToInputLabel("cpuset cpus:", resourcePageLabelWidth))
+	d.containerCPUSetCPUsField.SetLabel(i18n.PadToWidth(i18n.T("cpuset cpus:"), resourcePageLabelWidth))
 	d.containerCPUSetCPUsField.SetFieldStyle(style.InputFieldStyle)
 	d.containerCPUSetCPUsField.SetLabelStyle(style.InputLabelStyle)
 	d.containerCPUSetCPUsField.SetFieldWidth(inputFieldWidth)
 
 	// cpuset mems
 	d.containerCPUSetMemsField.SetBackgroundColor(style.DialogBgColor)
-	d.containerCPUSetMemsField.SetLabel(utils.StringToInputLabel(getSecondColLabel("cpuset mems"), len(memResLabel)+1))
+	d.containerCPUSetMemsField.SetLabel(i18n.PadToWidth(i18n.T("cpuset mems:"), resourcePageSecColLabelWidth))
 	d.containerCPUSetMemsField.SetFieldStyle(style.InputFieldStyle)
 	d.containerCPUSetMemsField.SetLabelStyle(style.InputLabelStyle)
 
@@ -1885,17 +2010,14 @@ func (d *ContainerCreateDialog) setupResourcePageUI() {
 
 	// shm size
 	d.containerShmSizeField.SetBackgroundColor(style.DialogBgColor)
-	d.containerShmSizeField.SetLabel(utils.StringToInputLabel("shm size:", resourcePageLabelWidth))
+	d.containerShmSizeField.SetLabel(i18n.PadToWidth(i18n.T("shm size:"), resourcePageLabelWidth))
 	d.containerShmSizeField.SetFieldStyle(style.InputFieldStyle)
 	d.containerShmSizeField.SetLabelStyle(style.InputLabelStyle)
 	d.containerShmSizeField.SetFieldWidth(inputFieldWidth)
 
 	// shm size systemd
 	d.containerShmSizeSystemdField.SetBackgroundColor(style.DialogBgColor)
-	d.containerShmSizeSystemdField.SetLabel(
-		utils.StringToInputLabel(getSecondColLabel("shm size systemd"),
-			len(memResLabel)+1,
-		))
+	d.containerShmSizeSystemdField.SetLabel(i18n.PadToWidth(i18n.T("shm size systemd:"), resourcePageSecColLabelWidth))
 	d.containerShmSizeSystemdField.SetFieldStyle(style.InputFieldStyle)
 	d.containerShmSizeSystemdField.SetLabelStyle(style.InputLabelStyle)
 
@@ -1926,63 +2048,74 @@ func (d *ContainerCreateDialog) setupResourcePageUI() {
 
 func (d *ContainerCreateDialog) setupNamespacePageUI() {
 	bgColor := style.DialogBgColor
-	namespacePageLabelWidth := 10
+	
+	// Calculate label widths for alignment
+	namespacePageLabelWidth := i18n.CalcMaxWidth(
+		i18n.T("cgroupns:"),
+		i18n.T("ipc:"),
+		i18n.T("pid:"),
+		i18n.T("userns:"),
+		i18n.T("uts:"),
+		i18n.T("uidmap:"),
+		i18n.T("gidmap:"),
+	) + 1
+	
+	namespacePageSecColLabelWidth := i18n.CalcMaxWidth(
+		i18n.T("subuidname:"),
+		i18n.T("subgidname:"),
+	) + 1
 
 	// cgroupns
 	d.containerNamespaceCgroupField.SetBackgroundColor(style.DialogBgColor)
-	d.containerNamespaceCgroupField.SetLabel(utils.StringToInputLabel("cgroupns:", namespacePageLabelWidth))
+	d.containerNamespaceCgroupField.SetLabel(i18n.PadToWidth(i18n.T("cgroupns:"), namespacePageLabelWidth))
 	d.containerNamespaceCgroupField.SetFieldStyle(style.InputFieldStyle)
 	d.containerNamespaceCgroupField.SetLabelStyle(style.InputLabelStyle)
 
 	// ipc
 	d.containerNamespaceIpcField.SetBackgroundColor(style.DialogBgColor)
-	d.containerNamespaceIpcField.SetLabel(utils.StringToInputLabel("ipc:", namespacePageLabelWidth))
+	d.containerNamespaceIpcField.SetLabel(i18n.PadToWidth(i18n.T("ipc:"), namespacePageLabelWidth))
 	d.containerNamespaceIpcField.SetFieldStyle(style.InputFieldStyle)
 	d.containerNamespaceIpcField.SetLabelStyle(style.InputLabelStyle)
 
 	// pid
 	d.containerNamespacePidField.SetBackgroundColor(style.DialogBgColor)
-	d.containerNamespacePidField.SetLabel(utils.StringToInputLabel("pid:", namespacePageLabelWidth))
+	d.containerNamespacePidField.SetLabel(i18n.PadToWidth(i18n.T("pid:"), namespacePageLabelWidth))
 	d.containerNamespacePidField.SetFieldStyle(style.InputFieldStyle)
 	d.containerNamespacePidField.SetLabelStyle(style.InputLabelStyle)
 
 	// userns
 	d.containerNamespaceUserField.SetBackgroundColor(style.DialogBgColor)
-	d.containerNamespaceUserField.SetLabel(utils.StringToInputLabel("userns:", namespacePageLabelWidth))
+	d.containerNamespaceUserField.SetLabel(i18n.PadToWidth(i18n.T("userns:"), namespacePageLabelWidth))
 	d.containerNamespaceUserField.SetFieldStyle(style.InputFieldStyle)
 	d.containerNamespaceUserField.SetLabelStyle(style.InputLabelStyle)
 
 	// uts
 	d.containerNamespaceUtsField.SetBackgroundColor(style.DialogBgColor)
-	d.containerNamespaceUtsField.SetLabel(utils.StringToInputLabel("uts:", namespacePageLabelWidth))
+	d.containerNamespaceUtsField.SetLabel(i18n.PadToWidth(i18n.T("uts:"), namespacePageLabelWidth))
 	d.containerNamespaceUtsField.SetFieldStyle(style.InputFieldStyle)
 	d.containerNamespaceUtsField.SetLabelStyle(style.InputLabelStyle)
 
 	// uidmap
 	d.containerNamespaceUidmapField.SetBackgroundColor(style.DialogBgColor)
-	d.containerNamespaceUidmapField.SetLabel(utils.StringToInputLabel("uidmap:", namespacePageLabelWidth))
+	d.containerNamespaceUidmapField.SetLabel(i18n.PadToWidth(i18n.T("uidmap:"), namespacePageLabelWidth))
 	d.containerNamespaceUidmapField.SetFieldStyle(style.InputFieldStyle)
 	d.containerNamespaceUidmapField.SetLabelStyle(style.InputLabelStyle)
 
 	// subuidname
-	subuidnameLabel := "subuidname:"
-
 	d.containerNamespaceSubuidNameField.SetBackgroundColor(style.DialogBgColor)
-	d.containerNamespaceSubuidNameField.SetLabel(utils.StringToInputLabel(subuidnameLabel, len(subuidnameLabel)+1))
+	d.containerNamespaceSubuidNameField.SetLabel(i18n.PadToWidth(i18n.T("subuidname:"), namespacePageSecColLabelWidth))
 	d.containerNamespaceSubuidNameField.SetFieldStyle(style.InputFieldStyle)
 	d.containerNamespaceSubuidNameField.SetLabelStyle(style.InputLabelStyle)
 
 	// gidmap
 	d.containerNamespaceGidmapField.SetBackgroundColor(style.DialogBgColor)
-	d.containerNamespaceGidmapField.SetLabel(utils.StringToInputLabel("gidmap:", namespacePageLabelWidth))
+	d.containerNamespaceGidmapField.SetLabel(i18n.PadToWidth(i18n.T("gidmap:"), namespacePageLabelWidth))
 	d.containerNamespaceGidmapField.SetFieldStyle(style.InputFieldStyle)
 	d.containerNamespaceGidmapField.SetLabelStyle(style.InputLabelStyle)
 
 	// subgidname
-	subgidnameLabel := "subgidname:"
-
 	d.containerNamespaceSubgidNameField.SetBackgroundColor(style.DialogBgColor)
-	d.containerNamespaceSubgidNameField.SetLabel(utils.StringToInputLabel(subgidnameLabel, len(subgidnameLabel)+1))
+	d.containerNamespaceSubgidNameField.SetLabel(i18n.PadToWidth(i18n.T("subgidname:"), namespacePageSecColLabelWidth))
 	d.containerNamespaceSubgidNameField.SetFieldStyle(style.InputFieldStyle)
 	d.containerNamespaceSubgidNameField.SetLabelStyle(style.InputLabelStyle)
 
@@ -2089,8 +2222,8 @@ func (d *ContainerCreateDialog) setActiveCategory(index int) {
 
 	d.categories.SetText(strings.Join(ctgList, "\n"))
 
-	// switch the page
-	d.categoryPages.SwitchToPage(d.categoryLabels[index])
+	// switch the page (use fixed ID, not translated label)
+	d.categoryPages.SwitchToPage(categoryPageIDs[index])
 }
 
 func (d *ContainerCreateDialog) nextCategory() {
@@ -2732,4 +2865,293 @@ func (d *ContainerCreateDialog) setVolumeSettingsPageNextFocus() {
 	}
 
 	d.focusElement = createContainerFormFocus
+}
+
+// UpdateLanguage updates all translatable text when language changes
+func (d *ContainerCreateDialog) UpdateLanguage() {
+	// Update category labels with translations (update in place, don't replace array)
+	d.categoryLabels[createContainerInfoPageIndex] = i18n.T("Container")
+	d.categoryLabels[createContainerEnvironmentPageIndex] = i18n.T("Environment")
+	d.categoryLabels[createContainerUserGroupsPageIndex] = i18n.T("User and groups")
+	d.categoryLabels[createContainerDNSPageIndex] = i18n.T("DNS Settings")
+	d.categoryLabels[createContainerHealthPageIndex] = i18n.T("Health check")
+	d.categoryLabels[createContainerNetworkingPageIndex] = i18n.T("Network Settings")
+	d.categoryLabels[createContainerPortPageIndex] = i18n.T("Ports Settings")
+	d.categoryLabels[createContainerSecurityOptsPageIndex] = i18n.T("Security Options")
+	d.categoryLabels[createContainerVolumePageIndex] = i18n.T("Volumes Settings")
+	d.categoryLabels[createContainerResourcePageIndex] = i18n.T("Resource Settings")
+	d.categoryLabels[createContainerNamespacePageIndex] = i18n.T("Namespace Options")
+	
+	// Update dialog title based on mode
+	if d.mode == ContainerCreateOnlyDialogMode {
+		d.layout.SetTitle(i18n.T("PODMAN CONTAINER CREATE"))
+	} else {
+		d.layout.SetTitle(i18n.T("PODMAN CONTAINER RUN"))
+	}
+	
+	// Update category list display
+	d.setActiveCategory(d.activePageIndex)
+	
+	// Update Container page field labels
+	cntInfoPageLabelWidth := i18n.CalcMaxWidth(
+		i18n.T("name:"),
+		i18n.T("command:"),
+		i18n.T("image:"),
+		i18n.T("pod:"),
+		i18n.T("labels:"),
+		i18n.T("secret:"),
+	) + 1
+	
+	checkboxLabelWidth1 := i18n.CalcMaxWidth(
+		i18n.T("privileged:"),
+		i18n.T("interactive:"),
+	) + 1
+	
+	checkboxLabelWidth2 := i18n.CalcMaxWidth(
+		i18n.T("remove:"),
+		i18n.T("detach:"),
+	) + 1
+	
+	timeoutLabelWidth := i18n.GetDisplayWidth(i18n.T("timeout:")) + 1
+	
+	d.containerNameField.SetLabel(i18n.PadToWidth(i18n.T("name:"), cntInfoPageLabelWidth))
+	d.containerCommandField.SetLabel(i18n.PadToWidth(i18n.T("command:"), cntInfoPageLabelWidth))
+	d.containerImageField.SetLabel(i18n.T("image:"))
+	d.containerImageField.SetLabelWidth(cntInfoPageLabelWidth)
+	d.containerPodField.SetLabel(i18n.T("pod:"))
+	d.containerPodField.SetLabelWidth(cntInfoPageLabelWidth)
+	d.containerLabelsField.SetLabel(i18n.PadToWidth(i18n.T("labels:"), cntInfoPageLabelWidth))
+	d.containerPrivilegedField.SetLabel(i18n.T("privileged:"))
+	d.containerPrivilegedField.SetLabelWidth(checkboxLabelWidth1)
+	d.containerTimeoutField.SetLabel(i18n.PadToWidth(i18n.T("timeout:"), timeoutLabelWidth))
+	d.containerInteractiveField.SetLabel(i18n.T("interactive:"))
+	d.containerInteractiveField.SetLabelWidth(checkboxLabelWidth1)
+	d.containerDetachField.SetLabel(i18n.T("detach:"))
+	d.containerDetachField.SetLabelWidth(checkboxLabelWidth2)
+	d.containerTtyField.SetLabel(i18n.T("tty:"))
+	d.containerTtyField.SetLabelWidth(timeoutLabelWidth)
+	d.containerRemoveField.SetLabel(i18n.T("remove:"))
+	d.containerRemoveField.SetLabelWidth(checkboxLabelWidth2)
+	d.containerSecretField.SetLabel(i18n.PadToWidth(i18n.T("secret:"), cntInfoPageLabelWidth))
+	
+	// Update Environment page field labels
+	envPageLabelWidth := i18n.CalcMaxWidth(
+		i18n.T("work dir:"),
+		i18n.T("env vars:"),
+		i18n.T("env file:"),
+		i18n.T("env merge:"),
+		i18n.T("unset env:"),
+		i18n.T("env host:"),
+	) + 1
+	
+	envHostLabelWidth := i18n.GetDisplayWidth(i18n.T("env host:")) + 1
+	unsetEnvAllLabelWidth := i18n.GetDisplayWidth(i18n.T("unsetenv all")) + 1
+	umaskLabelWidth := i18n.GetDisplayWidth(i18n.T("umask:")) + 1
+	
+	d.containerWorkDirField.SetLabel(i18n.PadToWidth(i18n.T("work dir:"), envPageLabelWidth))
+	d.containerEnvVarsField.SetLabel(i18n.PadToWidth(i18n.T("env vars:"), envPageLabelWidth))
+	d.containerEnvFileField.SetLabel(i18n.PadToWidth(i18n.T("env file:"), envPageLabelWidth))
+	d.containerEnvMergeField.SetLabel(i18n.PadToWidth(i18n.T("env merge:"), envPageLabelWidth))
+	d.containerUnsetEnvField.SetLabel(i18n.PadToWidth(i18n.T("unset env:"), envPageLabelWidth))
+	d.containerEnvHostField.SetLabel(i18n.PadToWidth(i18n.T("env host:"), envHostLabelWidth))
+	d.containerUnsetEnvAllField.SetLabel(i18n.T("unsetenv all"))
+	d.containerUnsetEnvAllField.SetLabelWidth(unsetEnvAllLabelWidth)
+	d.containerUmaskField.SetLabel(i18n.PadToWidth(i18n.T("umask:"), umaskLabelWidth))
+	
+	// Update User Groups page field labels
+	userGroupLabelWidth := i18n.CalcMaxWidth(
+		i18n.T("user:"),
+		i18n.T("host user:"),
+		i18n.T("passwd entry:"),
+		i18n.T("group entry:"),
+	) + 1
+	
+	d.containerUserField.SetLabel(i18n.PadToWidth(i18n.T("user:"), userGroupLabelWidth))
+	d.containerHostUsersField.SetLabel(i18n.PadToWidth(i18n.T("host user:"), userGroupLabelWidth))
+	d.containerPasswdEntryField.SetLabel(i18n.PadToWidth(i18n.T("passwd entry:"), userGroupLabelWidth))
+	d.containerGroupEntryField.SetLabel(i18n.PadToWidth(i18n.T("group entry:"), userGroupLabelWidth))
+	
+	// Update DNS page field labels
+	dnsPageLabelWidth := i18n.CalcMaxWidth(
+		i18n.T("dns servers:"),
+		i18n.T("dns options:"),
+		i18n.T("dns search:"),
+	) + 1
+	
+	d.containerDNSServersField.SetLabel(i18n.PadToWidth(i18n.T("dns servers:"), dnsPageLabelWidth))
+	d.containerDNSOptionsField.SetLabel(i18n.PadToWidth(i18n.T("dns options:"), dnsPageLabelWidth))
+	d.containerDNSSearchField.SetLabel(i18n.PadToWidth(i18n.T("dns search:"), dnsPageLabelWidth))
+	
+	// Update Health page field labels
+	healthPageLabelWidth := i18n.CalcMaxWidth(
+		i18n.T("command:"),
+		i18n.T("startup cmd:"),
+		i18n.T("log dest:"),
+		i18n.T("max log size:"),
+		i18n.T("interval:"),
+		i18n.T("retries:"),
+		i18n.T("timeout:"),
+	) + 1
+	
+	healthPageSecColLabelWidth := i18n.CalcMaxWidth(
+		i18n.T("max log count:"),
+		i18n.T("startup interval:"),
+		i18n.T("startup retries:"),
+		i18n.T("startup timeout:"),
+	) + 1
+	
+	healthPageThirdColLabelWidth := i18n.CalcMaxWidth(
+		i18n.T("on failure:"),
+		i18n.T("start period:"),
+		i18n.T("startup success:"),
+	) + 1
+	
+	d.containerHealthCmdField.SetLabel(i18n.PadToWidth(i18n.T("command:"), healthPageLabelWidth))
+	d.containerHealthStartupCmdField.SetLabel(i18n.PadToWidth(i18n.T("startup cmd:"), healthPageLabelWidth))
+	d.containerHealthLogDestField.SetLabel(i18n.PadToWidth(i18n.T("log dest:"), healthPageLabelWidth))
+	d.containerHealthMaxLogSizeField.SetLabel(i18n.PadToWidth(i18n.T("max log size:"), healthPageLabelWidth))
+	d.containerHealthMaxLogCountField.SetLabel(i18n.PadToWidth(i18n.T("max log count:"), healthPageSecColLabelWidth))
+	d.containerHealthOnFailureField.SetLabel(i18n.PadToWidth(i18n.T("on failure:"), healthPageThirdColLabelWidth))
+	d.containerHealthOnFailureField.SetOptions([]string{
+		i18n.T("none"),
+		i18n.T("kill"),
+		i18n.T("restart"),
+		i18n.T("stop"),
+	}, nil)
+	d.containerHealthIntervalField.SetLabel(i18n.PadToWidth(i18n.T("interval:"), healthPageLabelWidth))
+	d.containerHealthStartupIntervalField.SetLabel(i18n.PadToWidth(i18n.T("startup interval:"), healthPageSecColLabelWidth))
+	d.containerHealthStartPeriodField.SetLabel(i18n.PadToWidth(i18n.T("start period:"), healthPageThirdColLabelWidth))
+	d.containerHealthRetriesField.SetLabel(i18n.PadToWidth(i18n.T("retries:"), healthPageLabelWidth))
+	d.containerHealthStartupRetriesField.SetLabel(i18n.PadToWidth(i18n.T("startup retries:"), healthPageSecColLabelWidth))
+	d.containerHealthStartupSuccessField.SetLabel(i18n.PadToWidth(i18n.T("startup success:"), healthPageThirdColLabelWidth))
+	d.containerHealthTimeoutField.SetLabel(i18n.PadToWidth(i18n.T("timeout:"), healthPageLabelWidth))
+	d.containerHealthStartupTimeoutField.SetLabel(i18n.PadToWidth(i18n.T("startup timeout:"), healthPageSecColLabelWidth))
+	
+	// Update Network page field labels
+	networkingPageLabelWidth := i18n.CalcMaxWidth(
+		i18n.T("hostname:"),
+		i18n.T("ip address:"),
+		i18n.T("mac address:"),
+		i18n.T("network:"),
+	) + 1
+	
+	d.containerHostnameField.SetLabel(i18n.PadToWidth(i18n.T("hostname:"), networkingPageLabelWidth))
+	d.containerIPAddrField.SetLabel(i18n.PadToWidth(i18n.T("ip address:"), networkingPageLabelWidth))
+	d.containerMacAddrField.SetLabel(i18n.PadToWidth(i18n.T("mac address:"), networkingPageLabelWidth))
+	d.containerNetworkField.SetLabel(i18n.T("network:"))
+	d.containerNetworkField.SetLabelWidth(networkingPageLabelWidth)
+	
+	// Update Ports page field labels
+	portPageLabelWidth := i18n.CalcMaxWidth(
+		i18n.T("publish ports:"),
+		i18n.T("expose ports:"),
+		i18n.T("publish all"),
+	) + 1
+	
+	d.containerPortPublishField.SetLabel(i18n.PadToWidth(i18n.T("publish ports:"), portPageLabelWidth))
+	d.containerPortExposeField.SetLabel(i18n.PadToWidth(i18n.T("expose ports:"), portPageLabelWidth))
+	d.ContainerPortPublishAllField.SetLabel(i18n.T("publish all"))
+	d.ContainerPortPublishAllField.SetLabelWidth(portPageLabelWidth)
+	
+	// Update Security page field labels
+	securityOptsLabelWidth := i18n.CalcMaxWidth(
+		i18n.T("label:"),
+		i18n.T("apparmor:"),
+		i18n.T("seccomp:"),
+		i18n.T("mask:"),
+		i18n.T("unmask:"),
+		i18n.T("no new privileges"),
+	) + 1
+	
+	d.containerSecLabelField.SetLabel(i18n.PadToWidth(i18n.T("label:"), securityOptsLabelWidth))
+	d.containerSecApparmorField.SetLabel(i18n.PadToWidth(i18n.T("apparmor:"), securityOptsLabelWidth))
+	d.containerSeccompField.SetLabel(i18n.PadToWidth(i18n.T("seccomp:"), securityOptsLabelWidth))
+	d.containerSecMaskField.SetLabel(i18n.PadToWidth(i18n.T("mask:"), securityOptsLabelWidth))
+	d.containerSecUnmaskField.SetLabel(i18n.PadToWidth(i18n.T("unmask:"), securityOptsLabelWidth))
+	d.containerSecNoNewPrivField.SetLabel(i18n.T("no new privileges"))
+	d.containerSecNoNewPrivField.SetLabelWidth(securityOptsLabelWidth)
+	
+	// Update Volume page field labels
+	volumePageLabelWidth := i18n.CalcMaxWidth(
+		i18n.T("volume:"),
+		i18n.T("image volume:"),
+		i18n.T("mount:"),
+	) + 1
+	
+	d.containerVolumeField.SetLabel(i18n.PadToWidth(i18n.T("volume:"), volumePageLabelWidth))
+	d.containerImageVolumeField.SetLabel(i18n.T("image volume:"))
+	d.containerImageVolumeField.SetLabelWidth(volumePageLabelWidth)
+	d.containerMountField.SetLabel(i18n.PadToWidth(i18n.T("mount:"), volumePageLabelWidth))
+	
+	// Update Resource page field labels
+	resourcePageLabelWidth := i18n.CalcMaxWidth(
+		i18n.T("memory:"),
+		i18n.T("memory swap:"),
+		i18n.T("cpus:"),
+		i18n.T("cpu period:"),
+		i18n.T("cpu quota:"),
+		i18n.T("cpuset cpus:"),
+		i18n.T("shm size:"),
+	) + 1
+	
+	resourcePageSecColLabelWidth := i18n.CalcMaxWidth(
+		i18n.T("memory reservation:"),
+		i18n.T("memory swappiness:"),
+		i18n.T("cpu shares:"),
+		i18n.T("cpu rt period:"),
+		i18n.T("cpu rt runtime:"),
+		i18n.T("cpuset mems:"),
+		i18n.T("shm size systemd:"),
+	) + 1
+	
+	d.containerMemoryField.SetLabel(i18n.PadToWidth(i18n.T("memory:"), resourcePageLabelWidth))
+	d.containerMemoryReservationField.SetLabel(i18n.PadToWidth(i18n.T("memory reservation:"), resourcePageSecColLabelWidth))
+	d.containerMemorySwapField.SetLabel(i18n.PadToWidth(i18n.T("memory swap:"), resourcePageLabelWidth))
+	d.containerMemorySwappinessField.SetLabel(i18n.PadToWidth(i18n.T("memory swappiness:"), resourcePageSecColLabelWidth))
+	d.containerCPUsField.SetLabel(i18n.PadToWidth(i18n.T("cpus:"), resourcePageLabelWidth))
+	d.containerCPUSharesField.SetLabel(i18n.PadToWidth(i18n.T("cpu shares:"), resourcePageSecColLabelWidth))
+	d.containerCPUPeriodField.SetLabel(i18n.PadToWidth(i18n.T("cpu period:"), resourcePageLabelWidth))
+	d.containerCPURtPeriodField.SetLabel(i18n.PadToWidth(i18n.T("cpu rt period:"), resourcePageSecColLabelWidth))
+	d.containerCPUQuotaField.SetLabel(i18n.PadToWidth(i18n.T("cpu quota:"), resourcePageLabelWidth))
+	d.containerCPURtRuntimeField.SetLabel(i18n.PadToWidth(i18n.T("cpu rt runtime:"), resourcePageSecColLabelWidth))
+	d.containerCPUSetCPUsField.SetLabel(i18n.PadToWidth(i18n.T("cpuset cpus:"), resourcePageLabelWidth))
+	d.containerCPUSetMemsField.SetLabel(i18n.PadToWidth(i18n.T("cpuset mems:"), resourcePageSecColLabelWidth))
+	d.containerShmSizeField.SetLabel(i18n.PadToWidth(i18n.T("shm size:"), resourcePageLabelWidth))
+	d.containerShmSizeSystemdField.SetLabel(i18n.PadToWidth(i18n.T("shm size systemd:"), resourcePageSecColLabelWidth))
+	
+	// Update Namespace page field labels
+	namespacePageLabelWidth := i18n.CalcMaxWidth(
+		i18n.T("cgroupns:"),
+		i18n.T("ipc:"),
+		i18n.T("pid:"),
+		i18n.T("userns:"),
+		i18n.T("uts:"),
+		i18n.T("uidmap:"),
+		i18n.T("gidmap:"),
+	) + 1
+	
+	namespacePageSecColLabelWidth := i18n.CalcMaxWidth(
+		i18n.T("subuidname:"),
+		i18n.T("subgidname:"),
+	) + 1
+	
+	d.containerNamespaceCgroupField.SetLabel(i18n.PadToWidth(i18n.T("cgroupns:"), namespacePageLabelWidth))
+	d.containerNamespaceIpcField.SetLabel(i18n.PadToWidth(i18n.T("ipc:"), namespacePageLabelWidth))
+	d.containerNamespacePidField.SetLabel(i18n.PadToWidth(i18n.T("pid:"), namespacePageLabelWidth))
+	d.containerNamespaceUserField.SetLabel(i18n.PadToWidth(i18n.T("userns:"), namespacePageLabelWidth))
+	d.containerNamespaceUtsField.SetLabel(i18n.PadToWidth(i18n.T("uts:"), namespacePageLabelWidth))
+	d.containerNamespaceUidmapField.SetLabel(i18n.PadToWidth(i18n.T("uidmap:"), namespacePageLabelWidth))
+	d.containerNamespaceSubuidNameField.SetLabel(i18n.PadToWidth(i18n.T("subuidname:"), namespacePageSecColLabelWidth))
+	d.containerNamespaceGidmapField.SetLabel(i18n.PadToWidth(i18n.T("gidmap:"), namespacePageLabelWidth))
+	d.containerNamespaceSubgidNameField.SetLabel(i18n.PadToWidth(i18n.T("subgidname:"), namespacePageSecColLabelWidth))
+	
+	// Update form buttons
+	d.form.ClearButtons()
+	if d.mode == ContainerCreateOnlyDialogMode {
+		d.form.AddButton(i18n.T("Cancel"), d.cancelHandler)
+		d.form.AddButton(i18n.T("Create"), d.enterHandler)
+	} else {
+		d.form.AddButton(i18n.T("Cancel"), d.cancelHandler)
+		d.form.AddButton(i18n.T("Run"), d.enterHandler)
+	}
 }

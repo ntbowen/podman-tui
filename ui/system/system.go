@@ -6,6 +6,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/pdcs/registry"
 	"github.com/containers/podman-tui/ui/dialogs"
 	"github.com/containers/podman-tui/ui/style"
@@ -29,6 +30,7 @@ type System struct {
 	progressDialog           *dialogs.ProgressDialog
 	errorDialog              *dialogs.ErrorDialog
 	sortDialog               *dialogs.SortDialog
+	languageDialog           *dialogs.LanguageDialog
 	eventDialog              *sysdialogs.EventsDialog
 	dfDialog                 *sysdialogs.DfDialog
 	connPrgDialog            *sysdialogs.ConnectDialog
@@ -42,6 +44,7 @@ type System struct {
 	connectionConnectFunc    func(registry.Connection)
 	connectionDisconnectFunc func()
 	appFocusHandler          func()
+	refreshUIHandler         func()
 }
 
 type connectionListReport struct {
@@ -60,7 +63,13 @@ type sysSelectedItem struct {
 
 // NewSystem returns new system page view.
 func NewSystem() *System {
-	headers := []string{"name", "default", "status", "uri", "identity"}
+	headers := []string{
+		i18n.T("NAME"),
+		i18n.T("DEFAULT"),
+		i18n.T("STATUS"),
+		i18n.T("URI"),
+		i18n.T("IDENTITY"),
+	}
 	sys := &System{
 		Box:              tview.NewBox(),
 		title:            "system",
@@ -71,6 +80,7 @@ func NewSystem() *System {
 		errorDialog:      dialogs.NewErrorDialog(),
 		messageDialog:    dialogs.NewMessageDialog(""),
 		sortDialog:       dialogs.NewSortDialog(headers, 0),
+		languageDialog:   dialogs.NewLanguageDialog(),
 		eventDialog:      sysdialogs.NewEventDialog(),
 		dfDialog:         sysdialogs.NewDfDialog(),
 		connPrgDialog:    sysdialogs.NewConnectDialog(),
@@ -88,7 +98,7 @@ func NewSystem() *System {
 	sys.connTable.SetSelectable(true, false)
 
 	for i := range sys.connTableHeaders {
-		header := fmt.Sprintf("[::b]%s", strings.ToUpper(sys.connTableHeaders[i])) //nolint:perfsprint
+		header := fmt.Sprintf("[::b]%s", sys.connTableHeaders[i]) //nolint:perfsprint
 		sys.connTable.SetCell(0, i,
 			tview.NewTableCell(header).
 				SetExpansion(1).
@@ -98,27 +108,7 @@ func NewSystem() *System {
 				SetSelectable(false))
 	}
 
-	sys.cmdDialog = dialogs.NewCommandDialog([][]string{
-		{"add connection", "record destination for the Podman TUI service"},
-		{"connect", "connect to selected destination"},
-		{"disconnect", "disconnect from connected destination"},
-		{"disk usage", "display destination podman related disk usage"},
-		{"events", "display destination system events"},
-		{"info", "display destination podman system information"},
-		{"prune", "remove all unused pod, container, image and volume data"},
-		{"remove connection", "delete named destination for the Podman TUI"},
-		{"set default", "set selected destination as a default service"},
-	})
-
-	// set command dialog functions.
-	sys.cmdDialog.SetSelectedFunc(func() {
-		sys.cmdDialog.Hide()
-		sys.runCommand(sys.cmdDialog.GetSelectedItem())
-	})
-
-	sys.cmdDialog.SetCancelFunc(func() {
-		sys.cmdDialog.Hide()
-	})
+	sys.buildCommandDialog()
 
 	// set confirm dialogs functions.
 	sys.confirmDialog.SetSelectedFunc(func() {
@@ -169,12 +159,23 @@ func NewSystem() *System {
 	sys.sortDialog.SetCancelFunc(sys.sortDialog.Hide)
 	sys.sortDialog.SetSelectFunc(sys.SortView)
 
+	// set language dialog functions
+	sys.languageDialog.SetCancelFunc(sys.languageDialog.Hide)
+	sys.languageDialog.SetSelectedFunc(func() {
+		sys.changeLanguage()
+	})
+
 	return sys
 }
 
 // SetAppFocusHandler sets application focus handler.
 func (sys *System) SetAppFocusHandler(handler func()) {
 	sys.appFocusHandler = handler
+}
+
+// SetRefreshUIHandler sets UI refresh handler.
+func (sys *System) SetRefreshUIHandler(handler func()) {
+	sys.refreshUIHandler = handler
 }
 
 // GetTitle returns primitive title.
@@ -318,6 +319,7 @@ func (sys *System) getInnerDialogs(all bool) []utils.UIDialog {
 			sys.eventDialog,
 			sys.connAddDialog,
 			sys.sortDialog,
+			sys.languageDialog,
 		}
 	}
 
@@ -331,5 +333,106 @@ func (sys *System) getInnerDialogs(all bool) []utils.UIDialog {
 		sys.eventDialog,
 		sys.connAddDialog,
 		sys.sortDialog,
+		sys.languageDialog,
 	}
+}
+
+func (sys *System) buildCommandDialog() {
+	if sys.cmdDialog != nil {
+		sys.cmdDialog.Hide()
+	}
+
+	sys.cmdDialog = dialogs.NewCommandDialog([][]string{
+		{i18n.T("add connection"), i18n.T("record destination for the Podman TUI service")},
+		{i18n.T("connect"), i18n.T("connect to selected destination")},
+		{i18n.T("disconnect"), i18n.T("disconnect from connected destination")},
+		{i18n.T("disk usage"), i18n.T("display destination podman related disk usage")},
+		{i18n.T("events"), i18n.T("display destination system events")},
+		{i18n.T("info"), i18n.T("display destination podman system information")},
+		{i18n.T("prune"), i18n.T("remove all unused pod, container, image and volume data")},
+		{i18n.T("remove connection"), i18n.T("delete named destination for the Podman TUI")},
+		{i18n.T("language"), i18n.T("switch application display language")},
+		{i18n.T("set default"), i18n.T("set selected destination as a default service")},
+	})
+
+	sys.cmdDialog.SetSelectedFunc(func() {
+		sys.cmdDialog.Hide()
+		sys.runCommand(sys.cmdDialog.GetSelectedItem())
+	})
+
+	sys.cmdDialog.SetCancelFunc(func() {
+		sys.cmdDialog.Hide()
+	})
+}
+
+func (sys *System) updateTableHeaders() {
+	// Update header texts
+	sys.connTableHeaders = []string{
+		i18n.T("NAME"),
+		i18n.T("DEFAULT"),
+		i18n.T("STATUS"),
+		i18n.T("URI"),
+		i18n.T("IDENTITY"),
+	}
+
+	// Update table header cells
+	for i := range sys.connTableHeaders {
+		header := fmt.Sprintf("[::b]%s", sys.connTableHeaders[i]) //nolint:perfsprint
+		sys.connTable.GetCell(0, i).SetText(header)
+	}
+}
+
+func (sys *System) rebuildDialogs() {
+	// Rebuild add connection dialog
+	sys.connAddDialog = sysdialogs.NewAddConnectionDialog()
+	sys.connAddDialog.SetCancelFunc(sys.connAddDialog.Hide)
+	sys.connAddDialog.SetAddFunc(func() {
+		sys.addConnection()
+	})
+
+	// Rebuild disk usage dialog
+	sys.dfDialog = sysdialogs.NewDfDialog()
+	sys.dfDialog.SetCancelFunc(sys.dfDialog.Hide)
+
+	// Rebuild events dialog
+	sys.eventDialog = sysdialogs.NewEventDialog()
+	sys.eventDialog.SetCancelFunc(sys.eventDialog.Hide)
+
+	// Rebuild confirm dialog
+	sys.confirmDialog = dialogs.NewConfirmDialog()
+	sys.confirmDialog.SetSelectedFunc(func() {
+		sys.confirmDialog.Hide()
+
+		switch sys.confirmData {
+		case utils.PruneCommandLabel:
+			sys.prune()
+		case "remove_conn":
+			sys.remove()
+		}
+	})
+	sys.confirmDialog.SetCancelFunc(func() {
+		sys.confirmDialog.Hide()
+	})
+
+	// Rebuild language dialog
+	sys.languageDialog = dialogs.NewLanguageDialog()
+	sys.languageDialog.SetCancelFunc(sys.languageDialog.Hide)
+	sys.languageDialog.SetSelectedFunc(func() {
+		sys.changeLanguage()
+	})
+
+	// Rebuild message dialog
+	sys.messageDialog = dialogs.NewMessageDialog("")
+	sys.messageDialog.SetCancelFunc(sys.messageDialog.Hide)
+
+	// Rebuild connection progress dialog
+	sys.connPrgDialog = sysdialogs.NewConnectDialog()
+
+	// Rebuild error dialog
+	sys.errorDialog = dialogs.NewErrorDialog()
+
+	// Rebuild sort dialog
+	sys.sortDialog = dialogs.NewSortDialog(sys.connTableHeaders, 0)
+	sys.sortDialog.SetCancelFunc(sys.sortDialog.Hide)
+	sys.sortDialog.SetSelectFunc(sys.SortView)
 }

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/pdcs/images"
 	"github.com/containers/podman-tui/ui/dialogs"
 	"github.com/containers/podman-tui/ui/style"
@@ -58,35 +59,48 @@ func NewImageImportDialog() *ImageImportDialog {
 	}
 
 	bgColor := style.DialogBgColor
-	labelWidth := 11
+	
+	// Calculate label width dynamically based on translated text
+	labels := []string{
+		i18n.T("source:"),
+		i18n.T("change:"),
+		i18n.T("message:"),
+		i18n.T("reference:"),
+	}
+	labelWidth := 0
+	for _, label := range labels {
+		if width := i18n.GetDisplayWidth(label); width > labelWidth {
+			labelWidth = width
+		}
+	}
 
 	// path field
 	dialog.path.SetBackgroundColor(bgColor)
-	dialog.path.SetLabel(utils.StringToInputLabel("source:", labelWidth))
+	dialog.path.SetLabel(utils.StringToInputLabel(i18n.T("source:"), labelWidth))
 	dialog.path.SetFieldStyle(style.InputFieldStyle)
 	dialog.path.SetLabelStyle(style.InputLabelStyle)
 
 	// change field
 	dialog.change.SetBackgroundColor(bgColor)
-	dialog.change.SetLabel(utils.StringToInputLabel("change:", labelWidth))
+	dialog.change.SetLabel(utils.StringToInputLabel(i18n.T("change:"), labelWidth))
 	dialog.change.SetFieldStyle(style.InputFieldStyle)
 	dialog.change.SetLabelStyle(style.InputLabelStyle)
 
 	// commit field
 	dialog.commitMessage.SetBackgroundColor(bgColor)
-	dialog.commitMessage.SetLabel(utils.StringToInputLabel("message:", labelWidth))
+	dialog.commitMessage.SetLabel(utils.StringToInputLabel(i18n.T("message:"), labelWidth))
 	dialog.commitMessage.SetFieldStyle(style.InputFieldStyle)
 	dialog.commitMessage.SetLabelStyle(style.InputLabelStyle)
 
 	// reference field
 	dialog.reference.SetBackgroundColor(bgColor)
-	dialog.reference.SetLabel(utils.StringToInputLabel("reference:", labelWidth))
+	dialog.reference.SetLabel(utils.StringToInputLabel(i18n.T("reference:"), labelWidth))
 	dialog.reference.SetFieldStyle(style.InputFieldStyle)
 	dialog.reference.SetLabelStyle(style.InputLabelStyle)
 
 	// form
-	dialog.form.AddButton("Cancel", nil)
-	dialog.form.AddButton("Import", nil)
+	dialog.form.AddButton(i18n.T("Cancel"), nil)
+	dialog.form.AddButton(i18n.T("Import"), nil)
 	dialog.form.SetButtonsAlign(tview.AlignRight)
 	dialog.form.SetBackgroundColor(bgColor)
 	dialog.form.SetButtonBackgroundColor(style.ButtonBgColor)
@@ -112,7 +126,7 @@ func NewImageImportDialog() *ImageImportDialog {
 	dialog.layout.SetBackgroundColor(bgColor)
 	dialog.layout.SetBorder(true)
 	dialog.layout.SetBorderColor(style.DialogBorderColor)
-	dialog.layout.SetTitle("PODMAN IMAGE IMPORT")
+	dialog.layout.SetTitle(i18n.T("PODMAN IMAGE IMPORT"))
 	dialog.layout.AddItem(mainOptsLayout, 0, 1, true)
 	dialog.layout.AddItem(dialog.form, dialogs.DialogFormHeight, 0, true)
 
@@ -345,5 +359,47 @@ func (d *ImageImportDialog) setFocusElement() {
 		d.focusElement = imageImportReferenceFocus
 	case imageImportReferenceFocus:
 		d.focusElement = imageImportFormFocus
+	}
+}
+
+// UpdateLanguage updates all translatable text in the dialog.
+func (d *ImageImportDialog) UpdateLanguage() {
+	// Update dialog title
+	d.layout.SetTitle(i18n.T("PODMAN IMAGE IMPORT"))
+	
+	// Calculate label width dynamically based on translated text
+	labels := []string{
+		i18n.T("source:"),
+		i18n.T("change:"),
+		i18n.T("message:"),
+		i18n.T("reference:"),
+	}
+	labelWidth := 0
+	for _, label := range labels {
+		if width := i18n.GetDisplayWidth(label); width > labelWidth {
+			labelWidth = width
+		}
+	}
+	
+	// Update field labels
+	d.path.SetLabel(utils.StringToInputLabel(i18n.T("source:"), labelWidth))
+	d.change.SetLabel(utils.StringToInputLabel(i18n.T("change:"), labelWidth))
+	d.commitMessage.SetLabel(utils.StringToInputLabel(i18n.T("message:"), labelWidth))
+	d.reference.SetLabel(utils.StringToInputLabel(i18n.T("reference:"), labelWidth))
+	
+	// Update form buttons
+	d.form.ClearButtons()
+	d.form.AddButton(i18n.T("Cancel"), nil)
+	d.form.AddButton(i18n.T("Import"), nil)
+	
+	// Re-set button handlers
+	if d.cancelHandler != nil {
+		cancelButton := d.form.GetButton(d.form.GetButtonCount() - 2) //nolint:mnd
+		cancelButton.SetSelectedFunc(d.cancelHandler)
+	}
+	
+	if d.importHandler != nil {
+		importButton := d.form.GetButton(d.form.GetButtonCount() - 1)
+		importButton.SetSelectedFunc(d.importHandler)
 	}
 }

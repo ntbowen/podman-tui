@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/containers/common/libnetwork/types"
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/pdcs/networks"
 	"github.com/containers/podman-tui/ui/style"
 	"github.com/rivo/tview"
@@ -74,7 +75,7 @@ func (nets *Networks) ClearData() {
 													SetSelectable(false))
 	}
 
-	nets.table.SetTitle(fmt.Sprintf("[::b]%s[0]", strings.ToUpper(nets.title)))
+	nets.table.SetTitle(fmt.Sprintf("[::b]%s[0]", strings.ToUpper(i18n.T(nets.title))))
 }
 
 type lprSort []types.Network

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/gdamore/tcell/v2"
 	"github.com/pkg/errors"
 	"github.com/rivo/tview"
@@ -50,24 +51,18 @@ func LabelWidthLeftPadding(input string, padding int) string {
 }
 
 // StringToInputLabel create string with max width required for input fields.
+// It properly handles double-byte characters (CJK) by using display width.
 func StringToInputLabel(input string, maxWidth int) string {
-	label := ""
-	labelIndex := 0
-
-	for index, char := range input {
-		if index >= maxWidth {
-			break
-		}
-
-		label += string(char)
-		labelIndex++
+	currentWidth := i18n.GetDisplayWidth(input)
+	
+	// If input is already wider than maxWidth, truncate it
+	if currentWidth > maxWidth {
+		return input[:maxWidth]
 	}
-
-	for index := labelIndex; index < maxWidth; index++ {
-		label += " "
-	}
-
-	return label
+	
+	// Add spaces to reach maxWidth
+	padding := maxWidth - currentWidth
+	return input + strings.Repeat(" ", padding)
 }
 
 // AlignStringListWidth returns max string len in the list.

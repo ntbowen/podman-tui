@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/pdcs/containers"
 	"github.com/containers/podman-tui/ui/dialogs"
 	"github.com/containers/podman-tui/ui/style"
@@ -76,14 +77,31 @@ func NewContainerCheckpointDialog() *ContainerCheckpointDialog {
 		form:           tview.NewForm(),
 	}
 
-	labelWidth := 14
-	chkGroupFirstColLabelWidth := 14
-	chkGroupSecondColLabelWidth := 16
-	chkGroupThirdColLabelWidth := 16
+	// Calculate label width for alignment (input fields)
+	labelWidth := i18n.CalcMaxWidth(
+		i18n.T("create image:"),
+		i18n.T("export:"),
+	) + 1 // Add space after label
+	
+	// Calculate checkbox label widths for each column
+	chkGroupFirstColLabelWidth := i18n.CalcMaxWidth(
+		i18n.T("ignore rootFS"),
+		i18n.T("keep"),
+	) + i18n.GetDisplayWidth(i18n.T(":"))
+	
+	chkGroupSecondColLabelWidth := i18n.CalcMaxWidth(
+		i18n.T("tcp established"),
+		i18n.T("leave running"),
+	) + i18n.GetDisplayWidth(i18n.T(":"))
+	
+	chkGroupThirdColLabelWidth := i18n.CalcMaxWidth(
+		i18n.T("pre checkpoint"),
+		i18n.T("with previous"),
+	) + i18n.GetDisplayWidth(i18n.T(":"))
 
 	// containerInfo
 	dialog.containerInfo.SetBackgroundColor(style.DialogBgColor)
-	dialog.containerInfo.SetLabel("[::b]" + utils.ContainerIDLabel)
+	dialog.containerInfo.SetLabel("[::b]" + i18n.T("CONTAINER ID:"))
 	dialog.containerInfo.SetFieldBackgroundColor(style.DialogBgColor)
 	dialog.containerInfo.SetLabelStyle(tcell.StyleDefault.
 		Background(style.DialogBorderColor).
@@ -91,34 +109,32 @@ func NewContainerCheckpointDialog() *ContainerCheckpointDialog {
 
 	// createImage
 	dialog.createImage.SetBackgroundColor(style.DialogBgColor)
-	dialog.createImage.SetLabel(utils.StringToInputLabel("create image:", labelWidth))
+	dialog.createImage.SetLabel(i18n.PadToWidth(i18n.T("create image:"), labelWidth))
 	dialog.createImage.SetFieldStyle(style.InputFieldStyle)
 	dialog.createImage.SetLabelStyle(style.InputLabelStyle)
 
 	// export
 	dialog.export.SetBackgroundColor(style.DialogBgColor)
-	dialog.export.SetLabel(utils.StringToInputLabel("export:", labelWidth))
+	dialog.export.SetLabel(i18n.PadToWidth(i18n.T("export:"), labelWidth))
 	dialog.export.SetFieldStyle(style.InputFieldStyle)
 	dialog.export.SetLabelStyle(style.InputLabelStyle)
 
 	// printStats
-	dialog.printStats.SetLabel("print stats:")
-	dialog.printStats.SetLabelWidth(labelWidth)
+	dialog.printStats.SetLabel(i18n.T("print stats:"))
 	dialog.printStats.SetChecked(false)
 	dialog.printStats.SetBackgroundColor(style.DialogBgColor)
 	dialog.printStats.SetLabelColor(style.DialogFgColor)
 	dialog.printStats.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// fileLock
-	dialog.fileLock.SetLabel("file lock:")
-	dialog.fileLock.SetLabelWidth(labelWidth)
+	dialog.fileLock.SetLabel(i18n.T("file lock:"))
 	dialog.fileLock.SetChecked(false)
 	dialog.fileLock.SetBackgroundColor(style.DialogBgColor)
 	dialog.fileLock.SetLabelColor(style.DialogFgColor)
 	dialog.fileLock.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// ignoreRootFS
-	ignoreRootFSLabel := fmt.Sprintf("%*s ", chkGroupFirstColLabelWidth, "ignore rootFS:")
+	ignoreRootFSLabel := i18n.FormatLabelWithWidth(i18n.T("ignore rootFS"), chkGroupFirstColLabelWidth, i18n.T(":"))
 
 	dialog.ignoreRootFS.SetLabel(ignoreRootFSLabel)
 	dialog.ignoreRootFS.SetChecked(false)
@@ -127,7 +143,7 @@ func NewContainerCheckpointDialog() *ContainerCheckpointDialog {
 	dialog.ignoreRootFS.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// keep
-	keepLabel := fmt.Sprintf("%*s ", chkGroupFirstColLabelWidth, "keep:")
+	keepLabel := i18n.FormatLabelWithWidth(i18n.T("keep"), chkGroupFirstColLabelWidth, i18n.T(":"))
 
 	dialog.keep.SetLabel(keepLabel)
 	dialog.keep.SetChecked(false)
@@ -136,7 +152,7 @@ func NewContainerCheckpointDialog() *ContainerCheckpointDialog {
 	dialog.keep.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// tcpEstablished
-	tcpEstablishedLabel := fmt.Sprintf("%*s ", chkGroupSecondColLabelWidth, "tcp established:")
+	tcpEstablishedLabel := i18n.FormatLabelWithWidth(i18n.T("tcp established"), chkGroupSecondColLabelWidth, i18n.T(":"))
 
 	dialog.tcpEstablished.SetLabel(tcpEstablishedLabel)
 	dialog.tcpEstablished.SetChecked(false)
@@ -145,7 +161,7 @@ func NewContainerCheckpointDialog() *ContainerCheckpointDialog {
 	dialog.tcpEstablished.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// leaveRunning
-	leaveRunningLabel := fmt.Sprintf("%*s ", chkGroupSecondColLabelWidth, "leave running:")
+	leaveRunningLabel := i18n.FormatLabelWithWidth(i18n.T("leave running"), chkGroupSecondColLabelWidth, i18n.T(":"))
 
 	dialog.leaveRunning.SetLabel(leaveRunningLabel)
 	dialog.leaveRunning.SetChecked(false)
@@ -154,7 +170,7 @@ func NewContainerCheckpointDialog() *ContainerCheckpointDialog {
 	dialog.leaveRunning.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// preCheckpoint
-	preCheckPointLabel := fmt.Sprintf("%*s ", chkGroupThirdColLabelWidth, "pre checkpoint:")
+	preCheckPointLabel := i18n.FormatLabelWithWidth(i18n.T("pre checkpoint"), chkGroupThirdColLabelWidth, i18n.T(":"))
 
 	dialog.preCheckpoint.SetLabel(preCheckPointLabel)
 	dialog.preCheckpoint.SetChecked(false)
@@ -163,7 +179,7 @@ func NewContainerCheckpointDialog() *ContainerCheckpointDialog {
 	dialog.preCheckpoint.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// withPrevious
-	withPreviousLabel := fmt.Sprintf("%*s ", chkGroupThirdColLabelWidth, "with previous:")
+	withPreviousLabel := i18n.FormatLabelWithWidth(i18n.T("with previous"), chkGroupThirdColLabelWidth, i18n.T(":"))
 
 	dialog.withPrevious.SetLabel(withPreviousLabel)
 	dialog.withPrevious.SetChecked(false)
@@ -172,8 +188,8 @@ func NewContainerCheckpointDialog() *ContainerCheckpointDialog {
 	dialog.withPrevious.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// form
-	dialog.form.AddButton(" Cancel ", nil)
-	dialog.form.AddButton("Checkpoint", nil)
+	dialog.form.AddButton(i18n.T(" Cancel "), nil)
+	dialog.form.AddButton(i18n.T("Checkpoint"), nil)
 	dialog.form.SetButtonsAlign(tview.AlignRight)
 	dialog.form.SetBackgroundColor(style.DialogBgColor)
 	dialog.form.SetButtonBackgroundColor(style.ButtonBgColor)
@@ -189,14 +205,20 @@ func NewContainerCheckpointDialog() *ContainerCheckpointDialog {
 
 	optionsLayoutRow02 := tview.NewFlex().SetDirection(tview.FlexColumn)
 	optionsLayoutRow02.AddItem(dialog.fileLock, labelWidth+2, 0, true) //nolint:mnd
+	optionsLayoutRow02.AddItem(utils.EmptyBoxSpace(style.DialogBgColor), 1, 0, false) // spacing
 	optionsLayoutRow02.AddItem(dialog.ignoreRootFS, 0, 1, true)
+	optionsLayoutRow02.AddItem(utils.EmptyBoxSpace(style.DialogBgColor), 2, 0, false) // spacing
 	optionsLayoutRow02.AddItem(dialog.tcpEstablished, 0, 1, true)
+	optionsLayoutRow02.AddItem(utils.EmptyBoxSpace(style.DialogBgColor), 2, 0, false) // spacing
 	optionsLayoutRow02.AddItem(dialog.preCheckpoint, 0, 1, true)
 
 	optionsLayoutRow03 := tview.NewFlex().SetDirection(tview.FlexColumn)
 	optionsLayoutRow03.AddItem(dialog.printStats, labelWidth+2, 1, true) //nolint:mnd
+	optionsLayoutRow03.AddItem(utils.EmptyBoxSpace(style.DialogBgColor), 1, 0, false) // spacing
 	optionsLayoutRow03.AddItem(dialog.keep, 0, 1, true)
+	optionsLayoutRow03.AddItem(utils.EmptyBoxSpace(style.DialogBgColor), 2, 0, false) // spacing
 	optionsLayoutRow03.AddItem(dialog.leaveRunning, 0, 1, true)
+	optionsLayoutRow03.AddItem(utils.EmptyBoxSpace(style.DialogBgColor), 2, 0, false) // spacing
 	optionsLayoutRow03.AddItem(dialog.withPrevious, 0, 1, true)
 
 	layout := tview.NewFlex().SetDirection(tview.FlexRow)
@@ -218,7 +240,7 @@ func NewContainerCheckpointDialog() *ContainerCheckpointDialog {
 	dialog.layout.SetBackgroundColor(style.DialogBgColor)
 	dialog.layout.SetBorder(true)
 	dialog.layout.SetBorderColor(style.DialogBorderColor)
-	dialog.layout.SetTitle("PODMAN CONTAINER CHECKPOINT")
+	dialog.layout.SetTitle(i18n.T("PODMAN CONTAINER CHECKPOINT"))
 	dialog.layout.AddItem(mainOptsLayout, 0, 1, true)
 	dialog.layout.AddItem(dialog.form, dialogs.DialogFormHeight, 0, true)
 
@@ -536,4 +558,56 @@ func (d *ContainerCheckpointDialog) setFocusElement() { //nolint:cyclop
 	case cntCheckpointWithPreviousFocus:
 		d.focusElement = cntCheckpointFormFocus
 	}
+}
+
+// UpdateLanguage updates all translatable text when language changes
+func (d *ContainerCheckpointDialog) UpdateLanguage() {
+	// Calculate label width for alignment (input fields)
+	labelWidth := i18n.CalcMaxWidth(
+		i18n.T("create image:"),
+		i18n.T("export:"),
+	) + 1 // Add space after label
+	
+	// Calculate checkbox label widths for each column
+	chkGroupFirstColLabelWidth := i18n.CalcMaxWidth(
+		i18n.T("ignore rootFS"),
+		i18n.T("keep"),
+	) + i18n.GetDisplayWidth(i18n.T(":"))
+	
+	chkGroupSecondColLabelWidth := i18n.CalcMaxWidth(
+		i18n.T("tcp established"),
+		i18n.T("leave running"),
+	) + i18n.GetDisplayWidth(i18n.T(":"))
+	
+	chkGroupThirdColLabelWidth := i18n.CalcMaxWidth(
+		i18n.T("pre checkpoint"),
+		i18n.T("with previous"),
+	) + i18n.GetDisplayWidth(i18n.T(":"))
+
+	// Update dialog title
+	d.layout.SetTitle(i18n.T("PODMAN CONTAINER CHECKPOINT"))
+	
+	// Update container info label
+	d.containerInfo.SetLabel("[::b]" + i18n.T("CONTAINER ID:"))
+	
+	// Update input field labels
+	d.createImage.SetLabel(i18n.PadToWidth(i18n.T("create image:"), labelWidth))
+	d.export.SetLabel(i18n.PadToWidth(i18n.T("export:"), labelWidth))
+	
+	// Update checkbox labels (single line)
+	d.printStats.SetLabel(i18n.T("print stats:"))
+	d.fileLock.SetLabel(i18n.T("file lock:"))
+	
+	// Update multi-column checkbox labels
+	d.ignoreRootFS.SetLabel(i18n.FormatLabelWithWidth(i18n.T("ignore rootFS"), chkGroupFirstColLabelWidth, i18n.T(":")))
+	d.keep.SetLabel(i18n.FormatLabelWithWidth(i18n.T("keep"), chkGroupFirstColLabelWidth, i18n.T(":")))
+	d.tcpEstablished.SetLabel(i18n.FormatLabelWithWidth(i18n.T("tcp established"), chkGroupSecondColLabelWidth, i18n.T(":")))
+	d.leaveRunning.SetLabel(i18n.FormatLabelWithWidth(i18n.T("leave running"), chkGroupSecondColLabelWidth, i18n.T(":")))
+	d.preCheckpoint.SetLabel(i18n.FormatLabelWithWidth(i18n.T("pre checkpoint"), chkGroupThirdColLabelWidth, i18n.T(":")))
+	d.withPrevious.SetLabel(i18n.FormatLabelWithWidth(i18n.T("with previous"), chkGroupThirdColLabelWidth, i18n.T(":")))
+	
+	// Update form buttons
+	d.form.ClearButtons()
+	d.form.AddButton(i18n.T(" Cancel "), d.cancelHandler)
+	d.form.AddButton(i18n.T("Checkpoint"), d.checkpointHandler)
 }

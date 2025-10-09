@@ -3,6 +3,7 @@ package dialogs
 import (
 	"fmt"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/ui/style"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -12,7 +13,6 @@ import (
 // ErrorDialog is an error dialog primitive.
 type ErrorDialog struct {
 	*tview.Box
-
 	modal   *tview.Modal
 	title   string
 	message string
@@ -24,7 +24,7 @@ func NewErrorDialog() *ErrorDialog {
 	bgColor := style.ErrorDialogBgColor
 	dialog := ErrorDialog{
 		Box:     tview.NewBox(),
-		modal:   tview.NewModal().SetBackgroundColor(bgColor).AddButtons([]string{"OK"}),
+		modal:   tview.NewModal().SetBackgroundColor(bgColor).AddButtons([]string{i18n.T("OK")}),
 		display: false,
 	}
 
@@ -125,4 +125,16 @@ func (d *ErrorDialog) SetDoneFunc(handler func()) *ErrorDialog {
 	})
 
 	return d
+}
+
+// UpdateLanguage updates all translatable text in the dialog.
+func (d *ErrorDialog) UpdateLanguage() {
+	// Update button text
+	d.modal.ClearButtons()
+	d.modal.AddButtons([]string{i18n.T("OK")})
+	
+	// Re-set done func to maintain functionality
+	d.modal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+		d.Hide()
+	})
 }

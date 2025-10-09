@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/ui/style"
 	"github.com/containers/podman-tui/ui/utils"
 	"github.com/docker/go-units"
@@ -39,7 +40,8 @@ func (pods *Pods) refresh(_ int) {
 		podID = podID[0:utils.IDLength]
 		podName := podList[i].Name
 		podStatus := podList[i].Status
-		podCreated := units.HumanDuration(time.Since(podList[i].Created)) + " ago"
+		duration := units.HumanDuration(time.Since(podList[i].Created))
+		podCreated := i18n.TranslateTime(duration) + " " + i18n.T("ago")
 		podInfraID := podList[i].InfraId
 
 		if len(podInfraID) > utils.IDLength {
@@ -50,15 +52,19 @@ func (pods *Pods) refresh(_ int) {
 
 		cellTextColor := style.FgColor
 
-		switch strings.ToLower(podStatus) {
+		// Translate status
+		statusLower := strings.ToLower(podStatus)
+		statusTranslated := i18n.T(podStatus)
+		
+		switch statusLower {
 		case "running":
-			podStatus = fmt.Sprintf("[green::]%s[-::] %s", "\u25B2", podStatus)
+			podStatus = fmt.Sprintf("[green::]%s[-::] %s", "\u25B2", statusTranslated)
 			cellTextColor = style.RunningStatusFgColor
 		case "paused":
-			podStatus = fmt.Sprintf("[red::]%s[-::] %s", "\u25BC", podStatus)
+			podStatus = fmt.Sprintf("[red::]%s[-::] %s", "\u25BC", statusTranslated)
 			cellTextColor = style.PausedStatusFgColor
 		default:
-			podStatus = fmt.Sprintf("[red::]%s[-::] %s", "\u25BC", podStatus)
+			podStatus = fmt.Sprintf("[red::]%s[-::] %s", "\u25BC", statusTranslated)
 		}
 
 		// id column

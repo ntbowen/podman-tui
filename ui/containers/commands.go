@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/pdcs/containers"
 	"github.com/containers/podman-tui/pdcs/pods"
 	"github.com/containers/podman-tui/ui/dialogs"
@@ -64,8 +65,12 @@ func (cnt *Containers) runCommand(cmd string) { //nolint:cyclop
 
 func (cnt *Containers) displayError(title string, err error) {
 	log.Error().Msgf("%s: %v", strings.ToLower(title), err)
-	cnt.errorDialog.SetTitle(title)
-	cnt.errorDialog.SetText(fmt.Sprintf("%v", err))
+	// Translate title using translateErrorTitle
+	translatedTitle := translateErrorTitle(title)
+	cnt.errorDialog.SetTitle(translatedTitle)
+	// Get translated error message (our predefined errors only, Podman errors kept as-is)
+	errorMsg := getTranslatedError(err)
+	cnt.errorDialog.SetText(errorMsg)
 	cnt.errorDialog.Display()
 }
 
@@ -77,7 +82,7 @@ func (cnt *Containers) attach() {
 		return
 	}
 
-	cnt.progressDialog.SetTitle("container attach in progress")
+	cnt.progressDialog.SetTitle(i18n.T("container attach in progress"))
 	cnt.progressDialog.Display()
 
 	attachReady := make(chan bool)
@@ -121,7 +126,7 @@ func (cnt *Containers) preHealthcheck() {
 		return
 	}
 
-	cnt.progressDialog.SetTitle("container healthcheck in progress")
+	cnt.progressDialog.SetTitle(i18n.T("container healthcheck in progress"))
 	cnt.progressDialog.Display()
 
 	cntHealthCheck := func() {
@@ -140,7 +145,7 @@ func (cnt *Containers) preHealthcheck() {
 
 		headerLabel := fmt.Sprintf("%s (%s)", cntID, cntName)
 
-		cnt.messageDialog.SetTitle("podman container healthcheck")
+		cnt.messageDialog.SetTitle(i18n.T("podman container healthcheck"))
 		cnt.messageDialog.SetText(dialogs.MessageContainerInfo, headerLabel, report)
 		cnt.messageDialog.Display()
 		cnt.appFocusHandler()
@@ -155,7 +160,7 @@ func (cnt *Containers) preRestore() {
 		podsList       [][]string
 	)
 
-	cnt.progressDialog.SetTitle("operation in progress")
+	cnt.progressDialog.SetTitle(i18n.T("operation in progress"))
 	cnt.progressDialog.Display()
 
 	// get current containers
@@ -202,7 +207,7 @@ func (cnt *Containers) restore() {
 	restoreOptions := cnt.restoreDialog.GetRestoreOptions()
 
 	cnt.restoreDialog.Hide()
-	cnt.progressDialog.SetTitle("container restore in progress")
+	cnt.progressDialog.SetTitle(i18n.T("container restore in progress"))
 	cnt.progressDialog.Display()
 
 	restore := func() {
@@ -220,7 +225,7 @@ func (cnt *Containers) restore() {
 		headerLabel := fmt.Sprintf("%s (%s)", restoreOptions.ContainerID, restoreOptions.Name)
 
 		cnt.progressDialog.Hide()
-		cnt.messageDialog.SetTitle("podman container restore")
+		cnt.messageDialog.SetTitle(i18n.T("podman container restore"))
 		cnt.messageDialog.SetText(dialogs.MessageContainerInfo, headerLabel, report)
 		cnt.messageDialog.Display()
 		cnt.appFocusHandler()
@@ -245,7 +250,7 @@ func (cnt *Containers) checkpoint() {
 	checkpointOptions := cnt.checkpointDialog.GetCheckpointOptions()
 
 	cnt.checkpointDialog.Hide()
-	cnt.progressDialog.SetTitle("container checkpoint in progress")
+	cnt.progressDialog.SetTitle(i18n.T("container checkpoint in progress"))
 	cnt.progressDialog.Display()
 
 	checkpoint := func() {
@@ -263,7 +268,7 @@ func (cnt *Containers) checkpoint() {
 		headerLabel := fmt.Sprintf("%s (%s)", cnt.selectedID, cnt.selectedName)
 
 		cnt.progressDialog.Hide()
-		cnt.messageDialog.SetTitle("podman container checkpoint")
+		cnt.messageDialog.SetTitle(i18n.T("podman container checkpoint"))
 		cnt.messageDialog.SetText(dialogs.MessageContainerInfo, headerLabel, report)
 		cnt.messageDialog.Display()
 		cnt.appFocusHandler()
@@ -289,7 +294,7 @@ func (cnt *Containers) commit() {
 	commitOpts := cnt.commitDialog.GetContainerCommitOptions()
 
 	cnt.commitDialog.Hide()
-	cnt.progressDialog.SetTitle("container commit in progress")
+	cnt.progressDialog.SetTitle(i18n.T("container commit in progress"))
 	cnt.progressDialog.Display()
 
 	cntCommit := func() {
@@ -308,7 +313,7 @@ func (cnt *Containers) commit() {
 		headerLabel := fmt.Sprintf("%s (%s)", cnt.selectedID, cnt.selectedName)
 
 		cnt.progressDialog.Hide()
-		cnt.messageDialog.SetTitle("podman container commit")
+		cnt.messageDialog.SetTitle(i18n.T("podman container commit"))
 		cnt.messageDialog.SetText(dialogs.MessageContainerInfo, headerLabel, response)
 		cnt.messageDialog.Display()
 		cnt.appFocusHandler()
@@ -415,7 +420,7 @@ func (cnt *Containers) run() {
 		return
 	}
 
-	cnt.progressDialog.SetTitle("container run in progress")
+	cnt.progressDialog.SetTitle(i18n.T("container run in progress"))
 	cnt.progressDialog.Display()
 
 	if runOpts.Detach {
@@ -443,7 +448,7 @@ func (cnt *Containers) runDetach(runOpts containers.CreateOptions) {
 
 			headerLabel := fmt.Sprintf("%s (%s)", "", runOpts.Name)
 
-			cnt.messageDialog.SetTitle("CONTAINER RUN WARNINGS")
+			cnt.messageDialog.SetTitle(i18n.T("CONTAINER RUN WARNINGS"))
 			cnt.messageDialog.SetText(dialogs.MessageContainerInfo, headerLabel, strings.Join(warnings, "\n"))
 			cnt.messageDialog.Display()
 			cnt.appFocusHandler()
@@ -487,7 +492,7 @@ func (cnt *Containers) runAttach(runOpts containers.CreateOptions) {
 
 			headerLabel := fmt.Sprintf("%s (%s)", "", runOpts.Name)
 
-			cnt.messageDialog.SetTitle("CONTAINER RUN WARNINGS")
+			cnt.messageDialog.SetTitle(i18n.T("CONTAINER RUN WARNINGS"))
 			cnt.messageDialog.SetText(dialogs.MessageContainerInfo, headerLabel, strings.Join(warnings, "\n"))
 			cnt.messageDialog.Display()
 			cnt.appFocusHandler()
@@ -555,7 +560,7 @@ func (cnt *Containers) create() {
 		return
 	}
 
-	cnt.progressDialog.SetTitle("container create in progress")
+	cnt.progressDialog.SetTitle(i18n.T("container create in progress"))
 	cnt.progressDialog.Display()
 
 	create := func() {
@@ -573,7 +578,7 @@ func (cnt *Containers) create() {
 		if len(warnings) > 0 {
 			headerLabel := fmt.Sprintf("%s (%s)", "", createOpts.Name)
 
-			cnt.messageDialog.SetTitle("CONTAINER CREATE WARNINGS")
+			cnt.messageDialog.SetTitle(i18n.T("CONTAINER CREATE WARNINGS"))
 			cnt.messageDialog.SetText(dialogs.MessageContainerInfo, headerLabel, strings.Join(warnings, "\n"))
 			cnt.messageDialog.Display()
 			cnt.appFocusHandler()
@@ -600,7 +605,7 @@ func (cnt *Containers) diff() {
 
 	headerLabel := fmt.Sprintf("%s (%s)", cnt.selectedID, cnt.selectedName)
 
-	cnt.messageDialog.SetTitle("podman container diff")
+	cnt.messageDialog.SetTitle(i18n.T("podman container diff"))
 	cnt.messageDialog.SetText(dialogs.MessageContainerInfo, headerLabel, strings.Join(data, "\n"))
 	cnt.messageDialog.DisplayFullSize()
 }
@@ -622,7 +627,7 @@ func (cnt *Containers) inspect() {
 
 	headerLabel := fmt.Sprintf("%s (%s)", cnt.selectedID, cnt.selectedName)
 
-	cnt.messageDialog.SetTitle("podman container inspect")
+	cnt.messageDialog.SetTitle(i18n.T("podman container inspect"))
 	cnt.messageDialog.SetText(dialogs.MessageContainerInfo, headerLabel, data)
 	cnt.messageDialog.DisplayFullSize()
 }
@@ -634,7 +639,7 @@ func (cnt *Containers) kill() {
 		return
 	}
 
-	cnt.progressDialog.SetTitle("container kill in progress")
+	cnt.progressDialog.SetTitle(i18n.T("container kill in progress"))
 	cnt.progressDialog.Display()
 
 	kill := func(id string) {
@@ -662,7 +667,7 @@ func (cnt *Containers) logs() {
 		return
 	}
 
-	cnt.progressDialog.SetTitle("container logs in progress")
+	cnt.progressDialog.SetTitle(i18n.T("container logs in progress"))
 	cnt.progressDialog.Display()
 
 	getLogs := func() {
@@ -685,7 +690,7 @@ func (cnt *Containers) logs() {
 		cntLogs = strings.ReplaceAll(cntLogs, "[", "")
 		cntLogs = strings.ReplaceAll(cntLogs, "]", "")
 
-		cnt.messageDialog.SetTitle("podman container logs")
+		cnt.messageDialog.SetTitle(i18n.T("podman container logs"))
 		cnt.messageDialog.SetText(dialogs.MessageContainerInfo, headerLabel, cntLogs)
 		cnt.messageDialog.TextScrollToEnd()
 		cnt.messageDialog.DisplayFullSize()
@@ -702,7 +707,7 @@ func (cnt *Containers) pause() {
 		return
 	}
 
-	cnt.progressDialog.SetTitle("container pause in progress")
+	cnt.progressDialog.SetTitle(i18n.T("container pause in progress"))
 	cnt.progressDialog.Display()
 
 	pause := func(id string) {
@@ -740,22 +745,22 @@ func (cnt *Containers) port() {
 
 	headerLabel := fmt.Sprintf("%s (%s)", cnt.selectedID, cnt.selectedName)
 
-	cnt.messageDialog.SetTitle("podman container port")
+	cnt.messageDialog.SetTitle(i18n.T("podman container port"))
 	cnt.messageDialog.SetText(dialogs.MessageContainerInfo, headerLabel, strings.Join(data, "\n"))
 	cnt.messageDialog.Display()
 }
 
 func (cnt *Containers) cprune() {
-	cnt.confirmDialog.SetTitle("podman container prune")
+	cnt.confirmDialog.SetTitle(i18n.T("podman container prune"))
 
 	cnt.confirmData = "prune"
 
-	cnt.confirmDialog.SetText("Are you sure you want to remove all unused containers ?")
+	cnt.confirmDialog.SetText(i18n.T("Are you sure you want to remove all unused containers ?"))
 	cnt.confirmDialog.Display()
 }
 
 func (cnt *Containers) prune() {
-	cnt.progressDialog.SetTitle("container prune in progress")
+	cnt.progressDialog.SetTitle(i18n.T("container prune in progress"))
 	cnt.progressDialog.Display()
 
 	prune := func() {
@@ -785,17 +790,17 @@ func (cnt *Containers) rename() {
 		return
 	}
 
-	cnt.cmdInputDialog.SetTitle("podman container rename")
+	cnt.cmdInputDialog.SetTitle(i18n.T("podman container rename"))
 
 	fgColor := style.GetColorHex(style.DialogFgColor)
 	bgColor := fmt.Sprintf("#%x", style.DialogBorderColor.Hex())
 	containerInfo := fmt.Sprintf("%s (%s)", cnt.selectedID, cnt.selectedName)
 	description := fmt.Sprintf("[%s:%s:b]%s[:-:-] %s",
-		fgColor, bgColor, utils.ContainerIDLabel, containerInfo)
+		fgColor, bgColor, i18n.T("CONTAINER ID:"), containerInfo)
 
 	cnt.cmdInputDialog.SetDescription(description)
-	cnt.cmdInputDialog.SetSelectButtonLabel("rename")
-	cnt.cmdInputDialog.SetLabel("target name ")
+	cnt.cmdInputDialog.SetSelectButtonLabel("Rename")
+	cnt.cmdInputDialog.SetLabel(i18n.T("target name"))
 
 	cnt.cmdInputDialog.SetSelectedFunc(func() {
 		newName := cnt.cmdInputDialog.GetInputText()
@@ -807,7 +812,7 @@ func (cnt *Containers) rename() {
 }
 
 func (cnt *Containers) renameContainer(id string, newName string) {
-	cnt.progressDialog.SetTitle("container rename in progress")
+	cnt.progressDialog.SetTitle(i18n.T("container rename in progress"))
 	cnt.progressDialog.Display()
 
 	renameFunc := func() {
@@ -837,20 +842,20 @@ func (cnt *Containers) rm() {
 		return
 	}
 
-	cnt.confirmDialog.SetTitle("podman container remove")
+	cnt.confirmDialog.SetTitle(i18n.T("podman container remove"))
 	cnt.confirmData = "rm"
 	bgColor := style.GetColorHex(style.DialogBorderColor)
 	fgColor := style.GetColorHex(style.DialogFgColor)
-	containerItem := fmt.Sprintf("[%s:%s:b]%s[:-:-] %s(%s)", fgColor, bgColor, utils.ContainerIDLabel, cntID, cntName)
-	description := fmt.Sprintf("%s\n\nAre you sure you want to remove the selected container ?", //nolint:perfsprint
-		containerItem)
+	containerItem := fmt.Sprintf("[%s:%s:b]%s[:-:-] %s(%s)", fgColor, bgColor, i18n.T("CONTAINER ID:"), cntID, cntName)
+	description := fmt.Sprintf("%s\n\n%s", //nolint:perfsprint
+		containerItem, i18n.T("Are you sure you want to remove the selected container ?"))
 
 	cnt.confirmDialog.SetText(description)
 	cnt.confirmDialog.Display()
 }
 
 func (cnt *Containers) remove() {
-	cnt.progressDialog.SetTitle("container remove in progress")
+	cnt.progressDialog.SetTitle(i18n.T("container remove in progress"))
 	cnt.progressDialog.Display()
 
 	remove := func(id string) {
@@ -885,7 +890,7 @@ func (cnt *Containers) start() {
 		return
 	}
 
-	cnt.progressDialog.SetTitle("container start in progress")
+	cnt.progressDialog.SetTitle(i18n.T("container start in progress"))
 	cnt.progressDialog.Display()
 
 	start := func(id string) {
@@ -912,7 +917,7 @@ func (cnt *Containers) stop() {
 		return
 	}
 
-	cnt.progressDialog.SetTitle("container stop in progress")
+	cnt.progressDialog.SetTitle(i18n.T("container stop in progress"))
 	cnt.progressDialog.Display()
 
 	stop := func(id string) {
@@ -962,7 +967,7 @@ func (cnt *Containers) unpause() {
 		return
 	}
 
-	cnt.progressDialog.SetTitle("container unpause in progress")
+	cnt.progressDialog.SetTitle(i18n.T("container unpause in progress"))
 	cnt.progressDialog.Display()
 
 	unpause := func(id string) {

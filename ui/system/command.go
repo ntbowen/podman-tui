@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/pdcs/registry"
 	"github.com/containers/podman-tui/pdcs/sysinfo"
 	"github.com/containers/podman-tui/ui/dialogs"
@@ -14,38 +15,76 @@ import (
 
 func (sys *System) runCommand(cmd string) {
 	switch cmd {
-	case "add connection":
+	case "add connection", i18n.T("add connection"):
 		sys.connAddDialog.Display()
-	case "connect":
+	case "connect", i18n.T("connect"):
 		sys.connect()
-	case "disconnect":
+	case "disconnect", i18n.T("disconnect"):
 		sys.disconnect()
-	case "disk usage":
+	case "disk usage", i18n.T("disk usage"):
 		sys.df()
-	case "events":
+	case "events", i18n.T("events"):
 		sys.events()
-	case "info":
+	case "info", i18n.T("info"):
 		sys.info()
-	case utils.PruneCommandLabel:
+	case utils.PruneCommandLabel, i18n.T("prune"):
 		sys.cprune()
-	case "remove connection":
+	case "remove connection", i18n.T("remove connection"):
 		sys.cremove()
-	case "set default":
+	case "language", i18n.T("language"):
+		sys.showLanguageDialog()
+	case "set default", i18n.T("set default"):
 		sys.setDefault()
+	default:
+		log.Warn().Msgf("unknown system command: %s", cmd)
 	}
 }
 
+func (sys *System) showLanguageDialog() {
+	sys.languageDialog.Display()
+}
+
+func (sys *System) changeLanguage() {
+	langCode := sys.languageDialog.GetSelectedLanguage()
+	if langCode == "" {
+		return
+	}
+	i18n.SetLanguage(langCode)
+	if err := i18n.SaveLanguageConfig(); err != nil {
+		sys.displayError("LANGUAGE SWITCH ERROR", err)
+		return
+	}
+	sys.buildCommandDialog()
+	sys.updateTableHeaders()
+	sys.rebuildDialogs()
+	sys.languageDialog.Hide()
+
+	sys.messageDialog.SetTitle("LANGUAGE CHANGED")
+	sys.messageDialog.SetText(dialogs.MessageSystemInfo, i18n.GetLanguageName(langCode), i18n.T("The interface has been updated"))
+	sys.messageDialog.Display()
+
+	if sys.refreshUIHandler != nil {
+		sys.refreshUIHandler()
+	}
+}
+
+
 func (sys *System) displayError(title string, err error) {
 	log.Error().Msgf("%s: %v", strings.ToLower(title), err)
-	sys.errorDialog.SetTitle(title)
-	sys.errorDialog.SetText(fmt.Sprintf("%v", err))
+	sys.errorDialog.SetTitle(i18n.T(title))
+	
+	// For error messages, keep the original English text
+	// Complex nested errors are better left untranslated for debugging
+	errMsg := fmt.Sprintf("%v", err)
+	
+	sys.errorDialog.SetText(errMsg)
 	sys.errorDialog.Display()
 }
 
 func (sys *System) addConnection() {
 	sys.connAddDialog.Hide()
 	name, uri, identity := sys.connAddDialog.GetItems()
-	sys.progressDialog.SetTitle("adding new connection")
+	sys.progressDialog.SetTitle(i18n.T("adding new connection"))
 	sys.progressDialog.Display()
 
 	go func() {
@@ -90,7 +129,7 @@ func (sys *System) df() {
 		return
 	}
 
-	sys.progressDialog.SetTitle("podman disk usage in progress")
+	sys.progressDialog.SetTitle(i18n.T("podman disk usage in progress"))
 	sys.progressDialog.Display()
 
 	diskUsage := func() {
@@ -130,7 +169,7 @@ func (sys *System) info() {
 		return
 	}
 
-	sys.progressDialog.SetTitle("podman system info in progress")
+	sys.progressDialog.SetTitle(i18n.T("podman system info in progress"))
 	sys.progressDialog.Display()
 
 	go func() {
@@ -147,7 +186,7 @@ func (sys *System) info() {
 
 		connName := registry.ConnectionName()
 
-		sys.messageDialog.SetTitle("SYSTEM INFORMATION")
+		sys.messageDialog.SetTitle(i18n.T("SYSTEM INFORMATION"))
 		sys.messageDialog.SetText(dialogs.MessageSystemInfo, connName, data)
 		sys.messageDialog.DisplayFullSize()
 		sys.appFocusHandler()
@@ -161,18 +200,18 @@ func (sys *System) cprune() {
 
 	connName := registry.ConnectionName()
 
-	sys.confirmDialog.SetTitle("podman system prune")
+	sys.confirmDialog.SetTitle(i18n.T("podman system prune"))
 	sys.confirmData = utils.PruneCommandLabel
 	confirmMsg := fmt.Sprintf(
-		"Are you sure you want to remove all unused pod, container, image and volume data on %s?",
-		connName)
+		i18n.T("Are you sure you want to remove all unused pod, container, image and volume data on %s?"),
+		connName,
+	)
 	sys.confirmDialog.SetText(confirmMsg)
 	sys.confirmDialog.Display()
 }
 
 func (sys *System) prune() {
-	sys.progressDialog.SetTitle("system prune in progress")
-	sys.progressDialog.Display()
+	sys.progressDialog.SetTitle(i18n.T("system prune in progress"))
 
 	prune := func() {
 		report, err := sysinfo.Prune()
@@ -186,7 +225,7 @@ func (sys *System) prune() {
 			return
 		}
 
-		sys.messageDialog.SetTitle("PODMAN SYSTEM PRUNE")
+		sys.messageDialog.SetTitle(i18n.T("PODMAN SYSTEM PRUNE"))
 		sys.messageDialog.SetText(dialogs.MessageSystemInfo, registry.ConnectionName(), report)
 		sys.messageDialog.Display()
 		sys.appFocusHandler()
@@ -209,15 +248,15 @@ func (sys *System) cremove() {
 		return
 	}
 
-	title := "podman system connection remove"
+	title := i18n.T("podman system connection remove")
 	sys.confirmDialog.SetTitle(title)
 	sys.confirmData = "remove_conn"
 	bgColor := style.GetColorHex(style.DialogBorderColor)
 	fgColor := style.GetColorHex(style.DialogFgColor)
-	serviceItem := fmt.Sprintf("[%s:%s:b]SERVICE NAME:[:-:-] %s", fgColor, bgColor, selectedItem.name)
+	serviceItem := fmt.Sprintf("[%s:%s:b]%s:[:-:-] %s", fgColor, bgColor, i18n.T("SERVICE NAME"), selectedItem.name)
 
-	confirmMsg := fmt.Sprintf("%s\n\nAre you sure you want to remove the selected service connection ?", //nolint:perfsprint,lll
-		serviceItem)
+	confirmMsg := fmt.Sprintf("%s\n\n%s", //nolint:perfsprint,lll
+		serviceItem, i18n.T("Are you sure you want to remove the selected service connection?"))
 	sys.confirmDialog.SetText(confirmMsg)
 	sys.confirmDialog.Display()
 }
@@ -225,7 +264,7 @@ func (sys *System) cremove() {
 func (sys *System) remove() {
 	selectedItem := sys.getSelectedItem()
 
-	sys.progressDialog.SetTitle("removing connection")
+	sys.progressDialog.SetTitle(i18n.T("removing connection"))
 	sys.progressDialog.Display()
 
 	go func() {
@@ -261,7 +300,7 @@ func (sys *System) setDefault() {
 
 func (sys *System) destIsSet() bool {
 	if !registry.ConnectionIsSet() {
-		sys.errorDialog.SetText("not connected to any podman service")
+		sys.errorDialog.SetText(i18n.T("not connected to any podman service"))
 		sys.errorDialog.Display()
 
 		return false

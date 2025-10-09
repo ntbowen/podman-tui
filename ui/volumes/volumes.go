@@ -5,6 +5,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/ui/dialogs"
 	"github.com/containers/podman-tui/ui/style"
 	"github.com/containers/podman-tui/ui/utils"
@@ -42,9 +43,9 @@ type volListReport struct {
 // NewVolumes returns new vols page view.
 func NewVolumes() *Volumes {
 	vols := &Volumes{
-		Box:            tview.NewBox(),
-		title:          "volumes",
-		headers:        []string{"driver", "volume name", "created at", "mount point"},
+		Box:     tview.NewBox(),
+		title:   "volumes",
+		headers: []string{i18n.T("driver"), i18n.T("volume name"), i18n.T("created at"), i18n.T("mount point")},
 		errorDialog:    dialogs.NewErrorDialog(),
 		progressDialog: dialogs.NewProgressDialog(),
 		confirmDialog:  dialogs.NewConfirmDialog(),
@@ -141,16 +142,12 @@ func (vols *Volumes) getSelectedItem() string {
 }
 
 func (vols *Volumes) initUI() {
-	vols.cmdDialog = dialogs.NewCommandDialog([][]string{
-		{"create", "create a new volume"},
-		{"inspect", "display detailed volume's information"},
-		{"prune", "remove all unused volumes"},
-		{"rm", "remove the selected volume"},
-	})
+	vols.buildCommandDialog()
 
 	vols.table = tview.NewTable()
 
-	vols.table.SetTitle(fmt.Sprintf("[::b]%s[0]", strings.ToUpper(vols.title)))
+	translatedTitle := i18n.T(vols.title)
+	vols.table.SetTitle(fmt.Sprintf("[::b]%s[0]", strings.ToUpper(translatedTitle)))
 	vols.table.SetBorderColor(style.BorderColor)
 	vols.table.SetBackgroundColor(style.BgColor)
 	vols.table.SetTitleColor(style.FgColor)
@@ -169,15 +166,7 @@ func (vols *Volumes) initUI() {
 	vols.table.SetFixed(1, 1)
 	vols.table.SetSelectable(true, false)
 
-	// set command dialog functions
-	vols.cmdDialog.SetSelectedFunc(func() {
-		vols.cmdDialog.Hide()
-		vols.runCommand(vols.cmdDialog.GetSelectedItem())
-	})
-
-	vols.cmdDialog.SetCancelFunc(func() {
-		vols.cmdDialog.Hide()
-	})
+	// NOTE: cmdDialog handlers (SetSelectedFunc, SetCancelFunc) are set in buildCommandDialog()
 
 	// set message dialog functions
 	vols.messageDialog.SetCancelFunc(func() {
@@ -213,4 +202,91 @@ func (vols *Volumes) initUI() {
 	// set sort dialog functions
 	vols.sortDialog.SetSelectFunc(vols.SortView)
 	vols.sortDialog.SetCancelFunc(vols.sortDialog.Hide)
+}
+
+func (vols *Volumes) buildCommandDialog() {
+	if vols.cmdDialog != nil {
+		vols.cmdDialog.Hide()
+	}
+
+	// Translate both command names and descriptions
+	vols.cmdDialog = dialogs.NewCommandDialog([][]string{
+		{i18n.T("create"), i18n.T("create a new volume")},
+		{i18n.T("inspect"), i18n.T("display detailed volume's information")},
+		{i18n.T("prune"), i18n.T("remove all unused volumes")},
+		{i18n.T("rm"), i18n.T("remove the selected volume")},
+	})
+
+	// Re-set command dialog functions after rebuild
+	vols.cmdDialog.SetSelectedFunc(func() {
+		vols.cmdDialog.Hide()
+		// GetSelectedItem returns translated command, map it back to English
+		translatedCmd := vols.cmdDialog.GetSelectedItem()
+		englishCmd := vols.getEnglishCommand(translatedCmd)
+		vols.runCommand(englishCmd)
+	})
+
+	vols.cmdDialog.SetCancelFunc(func() {
+		vols.cmdDialog.Hide()
+	})
+}
+
+// UpdateLanguage updates all translatable text when language changes.
+func (vols *Volumes) UpdateLanguage() {
+	// Update headers
+	vols.headers = []string{
+		i18n.T("driver"),
+		i18n.T("volume name"),
+		i18n.T("created at"),
+		i18n.T("mount point"),
+	}
+
+	// Rebuild command dialog with new translations
+	vols.buildCommandDialog()
+
+	// Update table header cells
+	for i := range vols.headers {
+		header := fmt.Sprintf("[black::b]%s", strings.ToUpper(vols.headers[i]))
+		vols.table.GetCell(0, i).SetText(header)
+	}
+
+	// Update table title with translation
+	translatedTitle := i18n.T(vols.title)
+	vols.table.SetTitle(fmt.Sprintf("[::b]%s[%d]", strings.ToUpper(translatedTitle), vols.table.GetRowCount()-1))
+
+	// Update dialogs
+	vols.createDialog.UpdateLanguage()
+	vols.messageDialog.UpdateLanguage()
+	vols.confirmDialog.UpdateLanguage()
+
+	// Rebuild error dialog and sort dialog to update button text
+	vols.errorDialog = dialogs.NewErrorDialog()
+	vols.sortDialog = dialogs.NewSortDialog([]string{
+		i18n.T("driver"),
+		i18n.T("name"),
+		i18n.T("created"),
+		i18n.T("mount point"),
+	}, 2) //nolint:mnd
+	
+	// Re-set sort dialog handlers after rebuild
+	vols.sortDialog.SetSelectFunc(vols.SortView)
+	vols.sortDialog.SetCancelFunc(vols.sortDialog.Hide)
+}
+
+// getEnglishCommand maps translated command back to English command key
+func (vols *Volumes) getEnglishCommand(translatedCmd string) string {
+	// Create reverse mapping from translated to English
+	commandMap := map[string]string{
+		i18n.T("create"):  "create",
+		i18n.T("inspect"): "inspect",
+		i18n.T("prune"):   "prune",
+		i18n.T("rm"):      "rm",
+	}
+
+	if englishCmd, exists := commandMap[translatedCmd]; exists {
+		return englishCmd
+	}
+
+	// Fallback to original if not found (for English or unknown commands)
+	return translatedCmd
 }

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/pdcs/images"
 	"github.com/containers/podman-tui/ui/style"
 	"github.com/rivo/tview"
@@ -76,7 +77,7 @@ func (img *Images) ClearData() {
 													SetSelectable(false))
 	}
 
-	img.table.SetTitle(fmt.Sprintf("[::b]%s[0]", strings.ToUpper(img.title)))
+	img.table.SetTitle(fmt.Sprintf("[::b]%s[0]", strings.ToUpper(i18n.T(img.title))))
 }
 
 type lprSort []images.ImageListReporter

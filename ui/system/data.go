@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/pdcs/registry"
 	"github.com/containers/podman-tui/ui/style"
 	"github.com/rs/zerolog/log"
@@ -18,9 +19,9 @@ func (connStatus connectionItemStatus) StatusString() string {
 
 	switch connStatus.status {
 	case registry.ConnectionStatusConnected:
-		status = fmt.Sprintf("%s %s", style.HeavyGreenCheckMark, "connected")
+		status = fmt.Sprintf("%s %s", style.HeavyGreenCheckMark, i18n.T("connected"))
 	case registry.ConnectionStatusConnectionError:
-		status = fmt.Sprintf("%s %s", style.HeavyRedCrossMark, "connection error")
+		status = fmt.Sprintf("%s %s", style.HeavyRedCrossMark, i18n.T("connection error"))
 	}
 
 	return status

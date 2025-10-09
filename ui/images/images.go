@@ -6,6 +6,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/pdcs/images"
 	"github.com/containers/podman-tui/ui/dialogs"
 	"github.com/containers/podman-tui/ui/images/imgdialogs"
@@ -76,13 +77,13 @@ func NewImages() *Images {
 	images := &Images{
 		Box:            tview.NewBox(),
 		title:          "images",
-		headers:        []string{"repository", "tag", "image id", "created at", "size"},
+		headers:        []string{i18n.T("repository"), i18n.T("tag"), i18n.T("image id"), i18n.T("created at"), i18n.T("size")},
 		errorDialog:    dialogs.NewErrorDialog(),
 		progressDialog: dialogs.NewProgressDialog(),
 		cmdInputDialog: dialogs.NewSimpleInputDialog(""),
 		messageDialog:  dialogs.NewMessageDialog(""),
 		confirmDialog:  dialogs.NewConfirmDialog(),
-		sortDialog:     dialogs.NewSortDialog([]string{"repository", "created", "size"}, 1),
+		sortDialog:     dialogs.NewSortDialog([]string{i18n.T("repository"), i18n.T("created"), i18n.T("size")}, 1),
 		searchDialog:   imgdialogs.NewImageSearchDialog(),
 		historyDialog:  imgdialogs.NewImageHistoryDialog(),
 		importDialog:   imgdialogs.NewImageImportDialog(),
@@ -93,24 +94,12 @@ func NewImages() *Images {
 		imagesList:     imageListReport{sortBy: "created", ascending: true},
 	}
 
-	images.cmdDialog = dialogs.NewCommandDialog([][]string{
-		{"build", "build an image from Containerfile"},
-		{"diff", "inspect changes to the image's file systems"},
-		{"history", "show history of the selected image"},
-		{"import", "create a container image from a tarball"},
-		{"inspect", "display the configuration of the selected image"},
-		{"prune", "remove all unused images"},
-		{"push", "push a source image to a specified destination"},
-		{"rm", "removes the selected  image from local storage"},
-		{"save", "save an image to docker-archive or oci-archive"},
-		{"search/pull", "search and pull image from registry"},
-		{"tag", "add an additional name to the selected  image"},
-		{"tree", "display layer hierarchy of an image"},
-		{"untag", "remove a name from the selected image"},
-	})
+	// Build command dialog with translations
+	images.buildCommandDialog()
 
 	imgTable := tview.NewTable()
-	imgTable.SetTitle(fmt.Sprintf("[::b]%s[0]", strings.ToUpper(images.title)))
+	translatedTitle := i18n.T(images.title)
+	imgTable.SetTitle(fmt.Sprintf("[::b]%s[0]", strings.ToUpper(translatedTitle)))
 	imgTable.SetBorderColor(style.BorderColor)
 	imgTable.SetBackgroundColor(style.BgColor)
 	imgTable.SetTitleColor(style.FgColor)
@@ -144,14 +133,7 @@ func NewImages() *Images {
 		images.cmdInputDialog.Hide()
 	})
 
-	// set command dialogs functions
-	images.cmdDialog.SetSelectedFunc(func() {
-		images.cmdDialog.Hide()
-		images.runCommand(images.cmdDialog.GetSelectedItem())
-	})
-	images.cmdDialog.SetCancelFunc(func() {
-		images.cmdDialog.Hide()
-	})
+	// NOTE: cmdDialog handlers (SetSelectedFunc, SetCancelFunc) are set in buildCommandDialog()
 
 	// set confirm dialogs functions
 	images.confirmDialog.SetSelectedFunc(func() {
@@ -353,4 +335,117 @@ func (img *Images) getInnerTopDialogs() []utils.UIDialog {
 	}
 
 	return dialogs
+}
+
+// buildCommandDialog builds the command dialog with translated strings
+func (img *Images) buildCommandDialog() {
+	if img.cmdDialog != nil {
+		img.cmdDialog.Hide()
+	}
+
+	// Translate both command names and descriptions
+	img.cmdDialog = dialogs.NewCommandDialog([][]string{
+		{i18n.T("build"), i18n.T("build an image from Containerfile")},
+		{i18n.T("diff"), i18n.T("inspect changes to the image's file systems")},
+		{i18n.T("history"), i18n.T("show history of the selected image")},
+		{i18n.T("import"), i18n.T("create a container image from a tarball")},
+		{i18n.T("inspect"), i18n.T("display the configuration of the selected image")},
+		{i18n.T("prune"), i18n.T("remove all unused images")},
+		{i18n.T("push"), i18n.T("push a source image to a specified destination")},
+		{i18n.T("rm"), i18n.T("removes the selected  image from local storage")},
+		{i18n.T("save"), i18n.T("save an image to docker-archive or oci-archive")},
+		{i18n.T("search/pull"), i18n.T("search and pull image from registry")},
+		{i18n.T("tag"), i18n.T("add an additional name to the selected  image")},
+		{i18n.T("tree"), i18n.T("display layer hierarchy of an image")},
+		{i18n.T("untag"), i18n.T("remove a name from the selected image")},
+	})
+
+	img.cmdDialog.SetSelectedFunc(func() {
+		img.cmdDialog.Hide()
+		// GetSelectedItem returns translated command, map it back to English
+		translatedCmd := img.cmdDialog.GetSelectedItem()
+		englishCmd := img.getEnglishCommand(translatedCmd)
+		img.runCommand(englishCmd)
+	})
+
+	img.cmdDialog.SetCancelFunc(func() {
+		img.cmdDialog.Hide()
+	})
+}
+
+// getEnglishCommand maps translated command back to English command key
+func (img *Images) getEnglishCommand(translatedCmd string) string {
+	// Create reverse mapping from translated to English
+	commandMap := map[string]string{
+		i18n.T("build"):       "build",
+		i18n.T("diff"):        "diff",
+		i18n.T("history"):     "history",
+		i18n.T("import"):      "import",
+		i18n.T("inspect"):     "inspect",
+		i18n.T("prune"):       "prune",
+		i18n.T("push"):        "push",
+		i18n.T("rm"):          "rm",
+		i18n.T("save"):        "save",
+		i18n.T("search/pull"): "search/pull",
+		i18n.T("tag"):         "tag",
+		i18n.T("tree"):        "tree",
+		i18n.T("untag"):       "untag",
+	}
+
+	if englishCmd, exists := commandMap[translatedCmd]; exists {
+		return englishCmd
+	}
+
+	// Fallback to original if not found (for English or unknown commands)
+	return translatedCmd
+}
+
+// UpdateLanguage updates all translatable text when language changes
+func (img *Images) UpdateLanguage() {
+	// Update headers
+	img.headers = []string{
+		i18n.T("repository"),
+		i18n.T("tag"),
+		i18n.T("image id"),
+		i18n.T("created at"),
+		i18n.T("size"),
+	}
+
+	// Rebuild command dialog with new translations
+	img.buildCommandDialog()
+
+	// Update table header cells
+	for i := range img.headers {
+		header := fmt.Sprintf("[black::b]%s", strings.ToUpper(img.headers[i]))
+		img.table.GetCell(0, i).SetText(header)
+	}
+
+	// Update table title with translation
+	translatedTitle := i18n.T(img.title)
+	img.table.SetTitle(fmt.Sprintf("[::b]%s[%d]", strings.ToUpper(translatedTitle), img.table.GetRowCount()-1))
+
+	// Update dialogs
+	img.messageDialog.UpdateLanguage()
+	img.confirmDialog.UpdateLanguage()
+	img.buildDialog.UpdateLanguage()
+	img.buildPrgDialog.UpdateLanguage()
+	img.historyDialog.UpdateLanguage()
+	img.importDialog.UpdateLanguage()
+	img.pushDialog.UpdateLanguage()
+	img.saveDialog.UpdateLanguage()
+	img.searchDialog.UpdateLanguage()
+
+	// Update error dialog
+	img.errorDialog.UpdateLanguage()
+	
+	// Rebuild sort dialog to update button text
+	img.sortDialog = dialogs.NewSortDialog([]string{
+		i18n.T("repository"),
+		i18n.T("created"),
+		i18n.T("size"),
+	}, 1)
+
+	// Re-set sort dialog handlers after rebuild
+	img.sortDialog.SetSelectFunc(img.SortView)
+	img.sortDialog.SetCancelFunc(img.sortDialog.Hide)
 }

@@ -3,6 +3,7 @@ package dialogs
 import (
 	"strings"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/ui/style"
 	"github.com/containers/podman-tui/ui/utils"
 	"github.com/gdamore/tcell/v2"
@@ -45,8 +46,8 @@ func NewConfirmDialog() *ConfirmDialog {
 	dialog.textview.SetTextColor(style.DialogFgColor)
 
 	dialog.form = tview.NewForm().
-		AddButton("Cancel", nil).
-		AddButton("  OK  ", nil).
+		AddButton(i18n.T("Cancel"), nil).
+		AddButton(i18n.T("  OK  "), nil).
 		SetButtonsAlign(tview.AlignRight)
 	dialog.form.SetBackgroundColor(style.DialogBgColor)
 	dialog.form.SetButtonBackgroundColor(style.ButtonBgColor)
@@ -217,4 +218,12 @@ func (d *ConfirmDialog) setRect() {
 	d.layout.AddItem(d.form, DialogFormHeight, 0, true)
 
 	d.Box.SetRect(d.x, d.y, d.width, d.height)
+}
+
+// UpdateLanguage updates all labels to current language.
+func (d *ConfirmDialog) UpdateLanguage() {
+	// Update form buttons
+	d.form.ClearButtons()
+	d.form.AddButton(i18n.T("Cancel"), d.cancelHandler)
+	d.form.AddButton(i18n.T("  OK  "), d.selectHandler)
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/pdcs/secrets"
 	"github.com/containers/podman-tui/ui/dialogs"
 	"github.com/containers/podman-tui/ui/style"
@@ -32,20 +33,20 @@ func (s *Secrets) create() {
 	createOpts := s.createDialog.GetCreateOptions()
 
 	if createOpts.File != "" && createOpts.Text != "" {
-		s.displayError("SECRET CREATE ERROR", errSecretFileAndText)
+		s.displayError(i18n.T("SECRET CREATE ERROR"), errSecretFileAndText)
 
 		return
 	}
 
 	if createOpts.File == "" && createOpts.Text == "" {
-		s.displayError("SECRET CREATE ERROR", errEmptySecretFileOrText)
+		s.displayError(i18n.T("SECRET CREATE ERROR"), errEmptySecretFileOrText)
 
 		return
 	}
 
 	err := secrets.Create(createOpts)
 	if err != nil {
-		s.displayError("SECRET CREATE ERROR", err)
+		s.displayError(i18n.T("SECRET CREATE ERROR"), err)
 	}
 
 	s.UpdateData()
@@ -61,7 +62,7 @@ func (s *Secrets) inspect() {
 
 	data, err := secrets.Inspect(secID)
 	if err != nil {
-		title := fmt.Sprintf("SECRET (%s) INSPECT ERROR", secID)
+		title := fmt.Sprintf(i18n.T("SECRET (%s) INSPECT ERROR"), secID)
 		s.displayError(title, err)
 
 		return
@@ -69,7 +70,7 @@ func (s *Secrets) inspect() {
 
 	headerLabel := fmt.Sprintf("%s (%s)", secID, secName)
 
-	s.messageDialog.SetTitle("podman secret inspect")
+	s.messageDialog.SetTitle(i18n.T("podman secret inspect"))
 	s.messageDialog.SetText(dialogs.MessageSecretInfo, headerLabel, data)
 	s.messageDialog.DisplayFullSize()
 }
@@ -82,14 +83,13 @@ func (s *Secrets) rm() {
 		return
 	}
 
-	s.confirmDialog.SetTitle("podman secret remove")
+	s.confirmDialog.SetTitle(i18n.T("podman secret remove"))
 
 	bgColor := style.GetColorHex(style.DialogBorderColor)
 	fgColor := style.GetColorHex(style.DialogFgColor)
-	networkItem := fmt.Sprintf("[%s:%s:b]SECRET ID:[:-:-] %s (%s)", fgColor, bgColor, secID, secName)
+	networkItem := fmt.Sprintf("[%s:%s:b]%s[:-:-] %s (%s)", fgColor, bgColor, i18n.T("SECRET ID:"), secID, secName)
 
-	description := fmt.Sprintf("%s\n\nAre you sure you want to remove the selected secret?", //nolint:perfsprint
-		networkItem)
+	description := fmt.Sprintf("%s\n\n%s", networkItem, i18n.T("Are you sure you want to remove the selected secret?"))
 	s.confirmDialog.SetText(description)
 	s.confirmDialog.Display()
 }
@@ -102,7 +102,7 @@ func (s *Secrets) remove() {
 		return
 	}
 
-	s.progressDialog.SetTitle("secret remove in progress")
+	s.progressDialog.SetTitle(i18n.T("secret remove in progress"))
 	s.progressDialog.Display()
 
 	remove := func(id string) {
@@ -111,7 +111,7 @@ func (s *Secrets) remove() {
 		s.progressDialog.Hide()
 
 		if err != nil {
-			title := fmt.Sprintf("SECRET (%s) REMOVE ERROR", secID)
+			title := fmt.Sprintf(i18n.T("SECRET (%s) REMOVE ERROR"), secID)
 			s.displayError(title, err)
 			s.appFocusHandler()
 

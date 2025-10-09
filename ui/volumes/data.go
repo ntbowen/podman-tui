@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/pdcs/volumes"
 	"github.com/containers/podman-tui/ui/style"
 	"github.com/containers/podman/v5/pkg/domain/entities"
@@ -66,7 +67,8 @@ func (vols *Volumes) ClearData() {
 													SetSelectable(false))
 	}
 
-	vols.table.SetTitle(fmt.Sprintf("[::b]%s[0]", strings.ToUpper(vols.title)))
+	translatedTitle := i18n.T(vols.title)
+	vols.table.SetTitle(fmt.Sprintf("[::b]%s[0]", strings.ToUpper(translatedTitle)))
 }
 
 func (vols *Volumes) getData() []*entities.VolumeListReport {

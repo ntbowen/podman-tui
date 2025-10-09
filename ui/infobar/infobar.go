@@ -3,6 +3,7 @@ package infobar
 import (
 	"fmt"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/pdcs/registry"
 	"github.com/containers/podman-tui/ui/style"
 	"github.com/containers/podman-tui/ui/utils"
@@ -52,16 +53,16 @@ func NewInfoBar() *InfoBar {
 	table.SetCell(
 		connectionCellRow,
 		dataCol1Index,
-		tview.NewTableCell(fmt.Sprintf("[%s::]%s", headerColor, "Connection:")),
+		tview.NewTableCell(fmt.Sprintf("[%s::]%s", headerColor, i18n.T("Connection:"))),
 	)
 
-	disconnectStatus := fmt.Sprintf("%s DISCONNECTED", style.HeavyRedCrossMark) //nolint:perfsprint
+	disconnectStatus := fmt.Sprintf("%s %s", style.HeavyRedCrossMark, i18n.T("DISCONNECTED"))
 	table.SetCell(connectionCellRow, dataCol2Index, tview.NewTableCell(disconnectStatus))
 
 	table.SetCell(
 		hostnameCellRow,
 		dataCol1Index,
-		tview.NewTableCell(fmt.Sprintf("[%s::]%s", headerColor, "Hostname:")),
+		tview.NewTableCell(fmt.Sprintf("[%s::]%s", headerColor, i18n.T("Hostname:"))),
 	)
 
 	table.SetCell(hostnameCellRow, dataCol2Index, emptyCell())
@@ -69,7 +70,7 @@ func NewInfoBar() *InfoBar {
 	table.SetCell(
 		osCellRow,
 		dataCol1Index,
-		tview.NewTableCell(fmt.Sprintf("[%s::]%s", headerColor, "OS type:")),
+		tview.NewTableCell(fmt.Sprintf("[%s::]%s", headerColor, i18n.T("OS type:"))),
 	)
 
 	table.SetCell(osCellRow, dataCol2Index, emptyCell())
@@ -77,11 +78,11 @@ func NewInfoBar() *InfoBar {
 	table.SetCell(
 		memCellRow,
 		dataCol1Index,
-		tview.NewTableCell(fmt.Sprintf("[%s::]%s", headerColor, "Memory usage:")),
+		tview.NewTableCell(fmt.Sprintf("[%s::]%s", headerColor, i18n.T("Memory usage:"))),
 	)
 
 	table.SetCell(memCellRow, dataCol2Index, tview.NewTableCell(utils.ProgressUsageString(defaultPerc)))
-	table.SetCell(swapCellRow, dataCol1Index, tview.NewTableCell(fmt.Sprintf("[%s::]%s", headerColor, "Swap usage:")))
+	table.SetCell(swapCellRow, dataCol1Index, tview.NewTableCell(fmt.Sprintf("[%s::]%s", headerColor, i18n.T("Swap usage:"))))
 	table.SetCell(swapCellRow, dataCol2Index, tview.NewTableCell(utils.ProgressUsageString(defaultPerc)))
 
 	// empty column
@@ -92,7 +93,7 @@ func NewInfoBar() *InfoBar {
 	table.SetCell(
 		connectionCellRow,
 		dataCol3Index,
-		tview.NewTableCell(fmt.Sprintf("[%s::]%s", headerColor, "Kernel version:")),
+		tview.NewTableCell(fmt.Sprintf("[%s::]%s", headerColor, i18n.T("Kernel version:"))),
 	)
 
 	table.SetCell(connectionCellRow, dataCol4Index, emptyCell())
@@ -100,7 +101,7 @@ func NewInfoBar() *InfoBar {
 	table.SetCell(
 		hostnameCellRow,
 		dataCol3Index,
-		tview.NewTableCell(fmt.Sprintf("[%s::]%s", headerColor, "API version:")),
+		tview.NewTableCell(fmt.Sprintf("[%s::]%s", headerColor, i18n.T("API version:"))),
 	)
 
 	table.SetCell(hostnameCellRow, dataCol4Index, emptyCell())
@@ -108,21 +109,21 @@ func NewInfoBar() *InfoBar {
 	table.SetCell(
 		osCellRow,
 		dataCol3Index,
-		tview.NewTableCell(fmt.Sprintf("[%s::]%s", headerColor, "OCI runtime:")),
+		tview.NewTableCell(fmt.Sprintf("[%s::]%s", headerColor, i18n.T("OCI runtime:"))),
 	)
 
 	table.SetCell(osCellRow, dataCol4Index, emptyCell())
 
 	table.SetCell(memCellRow,
 		dataCol3Index,
-		tview.NewTableCell(fmt.Sprintf("[%s::]%s", headerColor, "Conmon version:")),
+		tview.NewTableCell(fmt.Sprintf("[%s::]%s", headerColor, i18n.T("Conmon version:"))),
 	)
 
 	table.SetCell(memCellRow, dataCol4Index, emptyCell())
 
 	table.SetCell(swapCellRow,
 		dataCol3Index,
-		tview.NewTableCell(fmt.Sprintf("[%s::]%s", headerColor, "Buildah version:")),
+		tview.NewTableCell(fmt.Sprintf("[%s::]%s", headerColor, i18n.T("Buildah version:"))),
 	)
 
 	table.SetCell(swapCellRow, dataCol4Index, emptyCell())
@@ -170,14 +171,36 @@ func (info *InfoBar) UpdateConnStatus(status registry.ConnStatus) {
 
 	switch info.connStatus {
 	case registry.ConnectionStatusConnected:
-		connStatus = fmt.Sprintf("%s STATUS_OK", style.HeavyGreenCheckMark) //nolint:perfsprint
+		connStatus = fmt.Sprintf("%s %s", style.HeavyGreenCheckMark, i18n.T("STATUS_OK"))
 	case registry.ConnectionStatusConnectionError:
-		connStatus = fmt.Sprintf("%s STATUS_ERROR", style.HeavyRedCrossMark) //nolint:perfsprint
+		connStatus = fmt.Sprintf("%s %s", style.HeavyRedCrossMark, i18n.T("STATUS_ERROR"))
 	default:
-		connStatus = fmt.Sprintf("%s DISCONNECTED", style.HeavyRedCrossMark) //nolint:perfsprint
+		connStatus = fmt.Sprintf("%s %s", style.HeavyRedCrossMark, i18n.T("DISCONNECTED"))
 	}
 
 	info.table.GetCell(connectionCellRow, dataCol2Index).SetText(connStatus)
+}
+
+// RefreshLabels refreshes all labels with current language translations.
+func (info *InfoBar) RefreshLabels() {
+	headerColor := style.GetColorHex(style.InfoBarItemFgColor)
+	
+	// Update left column labels
+	info.table.GetCell(connectionCellRow, dataCol1Index).SetText(fmt.Sprintf("[%s::]%s", headerColor, i18n.T("Connection:")))
+	info.table.GetCell(hostnameCellRow, dataCol1Index).SetText(fmt.Sprintf("[%s::]%s", headerColor, i18n.T("Hostname:")))
+	info.table.GetCell(osCellRow, dataCol1Index).SetText(fmt.Sprintf("[%s::]%s", headerColor, i18n.T("OS type:")))
+	info.table.GetCell(memCellRow, dataCol1Index).SetText(fmt.Sprintf("[%s::]%s", headerColor, i18n.T("Memory usage:")))
+	info.table.GetCell(swapCellRow, dataCol1Index).SetText(fmt.Sprintf("[%s::]%s", headerColor, i18n.T("Swap usage:")))
+	
+	// Update right column labels
+	info.table.GetCell(connectionCellRow, dataCol3Index).SetText(fmt.Sprintf("[%s::]%s", headerColor, i18n.T("Kernel version:")))
+	info.table.GetCell(hostnameCellRow, dataCol3Index).SetText(fmt.Sprintf("[%s::]%s", headerColor, i18n.T("API version:")))
+	info.table.GetCell(osCellRow, dataCol3Index).SetText(fmt.Sprintf("[%s::]%s", headerColor, i18n.T("OCI runtime:")))
+	info.table.GetCell(memCellRow, dataCol3Index).SetText(fmt.Sprintf("[%s::]%s", headerColor, i18n.T("Conmon version:")))
+	info.table.GetCell(swapCellRow, dataCol3Index).SetText(fmt.Sprintf("[%s::]%s", headerColor, i18n.T("Buildah version:")))
+	
+	// Update connection status with current language
+	info.UpdateConnStatus(info.connStatus)
 }
 
 // Draw draws this primitive onto the screen.

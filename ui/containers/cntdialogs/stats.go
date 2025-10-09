@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/ui/dialogs"
 	"github.com/containers/podman-tui/ui/style"
 	"github.com/containers/podman-tui/ui/utils"
@@ -52,7 +53,7 @@ func NewContainerStatsDialog() *ContainerStatsDialog {
 
 	// container info text view
 	statsDialog.containerInfo.SetBackgroundColor(style.DialogBgColor)
-	statsDialog.containerInfo.SetLabel("[::b]" + utils.ContainerIDLabel)
+	statsDialog.containerInfo.SetLabel("[::b]" + i18n.T("CONTAINER ID:"))
 	statsDialog.containerInfo.SetFieldBackgroundColor(style.DialogBgColor)
 	statsDialog.containerInfo.SetLabelStyle(tcell.StyleDefault.
 		Background(style.DialogBorderColor).
@@ -60,7 +61,7 @@ func NewContainerStatsDialog() *ContainerStatsDialog {
 
 	// form
 	statsDialog.form = tview.NewForm().
-		AddButton("Cancel", nil).
+		AddButton(i18n.T("Cancel"), nil).
 		SetButtonsAlign(tview.AlignRight)
 	statsDialog.form.SetBackgroundColor(style.DialogBgColor)
 	statsDialog.form.SetButtonBackgroundColor(style.ButtonBgColor)
@@ -81,7 +82,7 @@ func NewContainerStatsDialog() *ContainerStatsDialog {
 	statsDialog.layout.SetBorder(true)
 	statsDialog.layout.SetBorderColor(style.DialogBorderColor)
 	statsDialog.layout.SetBackgroundColor(style.DialogBgColor)
-	statsDialog.layout.SetTitle("PODMAN CONTAINER STATS")
+	statsDialog.layout.SetTitle(i18n.T("PODMAN CONTAINER STATS"))
 
 	statDialogResultLayout := tview.NewFlex().SetDirection(tview.FlexColumn)
 	statDialogResultLayout.AddItem(utils.EmptyBoxSpace(style.DialogBgColor), 1, 0, false)
@@ -319,38 +320,38 @@ func (d *ContainerStatsDialog) initTableUI() {
 
 	// first column
 	d.table.SetCell(containerMemUsageCell.row, containerMemUsageCell.col-1,
-		tview.NewTableCell("mem usage/limit:").SetTextColor(headerFgColor))
+		tview.NewTableCell(i18n.T("mem usage/limit:")).SetTextColor(headerFgColor))
 	d.table.SetCell(containerMemUsageCell.row, containerMemUsageCell.col, tview.NewTableCell(""))
 
 	d.table.SetCell(containerMemPercCell.row, containerMemPercCell.col-1,
-		tview.NewTableCell("memory %:").SetTextColor(headerFgColor))
+		tview.NewTableCell(i18n.T("memory %:")).SetTextColor(headerFgColor))
 	d.table.SetCell(containerMemPercCell.row, containerMemPercCell.col, tview.NewTableCell(""))
 	d.setContainerMemPerc(0.00) //nolint:mnd
 
 	d.table.SetCell(containerBlockInputCell.row, containerBlockInputCell.col-1,
-		tview.NewTableCell("block input:").SetTextColor(headerFgColor))
+		tview.NewTableCell(i18n.T("block input:")).SetTextColor(headerFgColor))
 	d.table.SetCell(containerBlockInputCell.row, containerBlockInputCell.col, tview.NewTableCell(""))
 
 	d.table.SetCell(containerBlockOutputCell.row, containerBlockOutputCell.col-1,
-		tview.NewTableCell("block output:").SetTextColor(headerFgColor))
+		tview.NewTableCell(i18n.T("block output:")).SetTextColor(headerFgColor))
 	d.table.SetCell(containerBlockOutputCell.row, containerBlockOutputCell.col, tview.NewTableCell(""))
 
 	// second column
 	d.table.SetCell(containerPidsCell.row, containerPidsCell.col-1,
-		tview.NewTableCell("pids:").SetTextColor(headerFgColor))
+		tview.NewTableCell(i18n.T("pids:")).SetTextColor(headerFgColor))
 	d.table.SetCell(containerPidsCell.row, containerPidsCell.col, tview.NewTableCell(""))
 
 	d.table.SetCell(containerCPUPercCell.row, containerCPUPercCell.col-1,
-		tview.NewTableCell("cpu %:").SetTextColor(headerFgColor))
+		tview.NewTableCell(i18n.T("cpu %:")).SetTextColor(headerFgColor))
 	d.table.SetCell(containerCPUPercCell.row, containerCPUPercCell.col, tview.NewTableCell(""))
 	d.setContainerCPUPerc(0.00) //nolint:mnd
 
 	d.table.SetCell(containerNetInputCell.row, containerNetInputCell.col-1,
-		tview.NewTableCell("net input:").SetTextColor(headerFgColor))
+		tview.NewTableCell(i18n.T("net input:")).SetTextColor(headerFgColor))
 	d.table.SetCell(containerNetInputCell.row, containerNetInputCell.col, tview.NewTableCell(""))
 
 	d.table.SetCell(containerNetOutputCell.row, containerNetOutputCell.col-1,
-		tview.NewTableCell("net output:").SetTextColor(headerFgColor))
+		tview.NewTableCell(i18n.T("net output:")).SetTextColor(headerFgColor))
 	d.table.SetCell(containerNetOutputCell.row, containerNetOutputCell.col, tview.NewTableCell(""))
 }
 
@@ -460,4 +461,29 @@ func (d *ContainerStatsDialog) setContainerNetOutput(noutput uint64) {
 	}
 
 	d.table.GetCell(containerNetOutputCell.row, containerNetOutputCell.col).SetText(netOutput).SetTextColor(fgColor)
+}
+
+// UpdateLanguage updates all labels to current language.
+func (d *ContainerStatsDialog) UpdateLanguage() {
+	// Update window title
+	d.layout.SetTitle(i18n.T("PODMAN CONTAINER STATS"))
+
+	// Update container ID label
+	d.containerInfo.SetLabel("[::b]" + i18n.T("CONTAINER ID:"))
+
+	// Update form buttons
+	d.form.ClearButtons()
+	d.form.AddButton(i18n.T("Cancel"), d.doneHandler)
+
+	// Update table headers
+	headerFgColor := style.TableHeaderFgColor
+	
+	d.table.GetCell(containerMemUsageCell.row, containerMemUsageCell.col-1).SetText(i18n.T("mem usage/limit:")).SetTextColor(headerFgColor)
+	d.table.GetCell(containerMemPercCell.row, containerMemPercCell.col-1).SetText(i18n.T("memory %:")).SetTextColor(headerFgColor)
+	d.table.GetCell(containerBlockInputCell.row, containerBlockInputCell.col-1).SetText(i18n.T("block input:")).SetTextColor(headerFgColor)
+	d.table.GetCell(containerBlockOutputCell.row, containerBlockOutputCell.col-1).SetText(i18n.T("block output:")).SetTextColor(headerFgColor)
+	d.table.GetCell(containerPidsCell.row, containerPidsCell.col-1).SetText(i18n.T("pids:")).SetTextColor(headerFgColor)
+	d.table.GetCell(containerCPUPercCell.row, containerCPUPercCell.col-1).SetText(i18n.T("cpu %:")).SetTextColor(headerFgColor)
+	d.table.GetCell(containerNetInputCell.row, containerNetInputCell.col-1).SetText(i18n.T("net input:")).SetTextColor(headerFgColor)
+	d.table.GetCell(containerNetOutputCell.row, containerNetOutputCell.col-1).SetText(i18n.T("net output:")).SetTextColor(headerFgColor)
 }

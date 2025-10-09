@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/pdcs/registry"
 	"github.com/containers/podman/v5/pkg/bindings/system"
 	"github.com/containers/podman/v5/pkg/domain/entities"
@@ -120,7 +121,7 @@ func prepDfSummary(reports *entities.SystemDfReport) []*DfSummary { //nolint:fun
 
 // Type returns df summary report type: Images, Containers or Local Volumes.
 func (dfsum *DfSummary) Type() string {
-	return dfsum.rType
+	return i18n.T(dfsum.rType)
 }
 
 // Total returns total value of df summary.

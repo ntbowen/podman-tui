@@ -1,6 +1,7 @@
 package sysdialogs
 
 import (
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/ui/dialogs"
 	"github.com/containers/podman-tui/ui/style"
 	"github.com/containers/podman-tui/ui/utils"
@@ -38,11 +39,11 @@ func NewEventDialog() *EventsDialog {
 	}
 
 	// service name input field
-	serviceNameLabel := "SERVICE NAME:"
+	serviceNameLabel := i18n.T("SERVICE NAME:")
 
 	eventsDialog.serviceName.SetBackgroundColor(style.DialogBgColor)
 	eventsDialog.serviceName.SetLabel("[::b]" + serviceNameLabel)
-	eventsDialog.serviceName.SetLabelWidth(len(serviceNameLabel))
+	eventsDialog.serviceName.SetLabelWidth(i18n.GetDisplayWidth(serviceNameLabel))
 	eventsDialog.serviceName.SetFieldBackgroundColor(style.DialogBgColor)
 	eventsDialog.serviceName.SetLabelStyle(tcell.StyleDefault.
 		Background(style.DialogBorderColor).
@@ -61,7 +62,7 @@ func NewEventDialog() *EventsDialog {
 
 	// form
 	eventsDialog.form = tview.NewForm().
-		AddButton("Cancel", nil).
+		AddButton(i18n.T("Cancel"), nil).
 		SetButtonsAlign(tview.AlignRight)
 
 	eventsDialog.form.SetBackgroundColor(style.DialogBgColor)
@@ -108,7 +109,7 @@ func (d *EventsDialog) Hide() {
 func (d *EventsDialog) SetServiceName(name string) {
 	serviceName := utils.LabelWidthLeftPadding(name, eventDialogLabelPadding)
 
-	d.layout.SetTitle("SYSTEM EVENTS")
+	d.layout.SetTitle(i18n.T("SYSTEM EVENTS"))
 
 	d.serviceName.SetText(serviceName)
 }

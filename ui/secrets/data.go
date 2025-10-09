@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/pdcs/secrets"
 	"github.com/containers/podman-tui/ui/style"
 	"github.com/containers/podman/v5/pkg/domain/entities/types"
@@ -73,7 +74,7 @@ func (s *Secrets) ClearData() {
 													SetSelectable(false))
 	}
 
-	s.table.SetTitle(fmt.Sprintf("[::b]%s[0]", strings.ToUpper(s.title)))
+	s.table.SetTitle(fmt.Sprintf("[::b]%s[0]", strings.ToUpper(i18n.T(s.title))))
 }
 
 type lprSort []*types.SecretInfoReport

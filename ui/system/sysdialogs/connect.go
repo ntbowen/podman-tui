@@ -3,6 +3,7 @@ package sysdialogs
 import (
 	"fmt"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/ui/style"
 	"github.com/containers/podman-tui/ui/utils"
 	"github.com/gdamore/tcell/v2"
@@ -34,7 +35,7 @@ func NewConnectDialog() *ConnectDialog {
 		layout:         tview.NewFlex().SetDirection(tview.FlexRow),
 		textview:       tview.NewTextView(),
 		progressDialog: tvxwidgets.NewActivityModeGauge(),
-		cancelButton:   tview.NewButton(" Cancel "),
+		cancelButton:   tview.NewButton(i18n.T(" Cancel ")),
 	}
 
 	// connect dialog box
@@ -165,7 +166,7 @@ func (d *ConnectDialog) InputHandler() func(event *tcell.EventKey, setFocus func
 
 // SetDestinationName sets progress bar title destination name.
 func (d *ConnectDialog) SetDestinationName(name string) {
-	title := fmt.Sprintf("connecting to %s", name) //nolint:perfsprint
+	title := fmt.Sprintf(i18n.T("connecting to %s"), name) //nolint:perfsprint
 
 	d.layout.SetTitle(title)
 }

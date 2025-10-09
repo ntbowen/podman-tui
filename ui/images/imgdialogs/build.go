@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/containers/buildah/define"
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/pdcs/images"
 	"github.com/containers/podman-tui/ui/dialogs"
 	"github.com/containers/podman-tui/ui/style"
@@ -68,11 +69,21 @@ const (
 	buildDialogSecurityOptsPageIndex
 )
 
+const (
+	buildDialogBasicInfoPageName   = "BasicInformation"
+	buildDialogBuildInfoPageName   = "BuildSettings"
+	buildDialogCapabilityPageName  = "Capability"
+	buildDialogCPUMemoryPageName   = "CPUAndMemory"
+	buildDialogNetworkingPageName  = "Networking"
+	buildDialogSecurityOptsPageName = "SecurityOptions"
+)
+
 // ImageBuildDialog represents image build dialog primitive.
 type ImageBuildDialog struct {
 	*tview.Box
 
 	layout                  *tview.Flex
+	contentLayout           *tview.Flex // layout containing categories and pages
 	form                    *tview.Form
 	categoryLabels          []string
 	categories              *tview.TextView
@@ -129,12 +140,12 @@ func NewImageBuildDialog() *ImageBuildDialog { //nolint:maintidx
 		layout: tview.NewFlex().SetDirection(tview.FlexRow),
 		form:   tview.NewForm(),
 		categoryLabels: []string{
-			"Basic Information",
-			"Build Settings",
-			"Capability",
-			"CPU and Memory",
-			"Networking",
-			"Security Options",
+			i18n.T("Basic Information"),
+			i18n.T("Build Settings"),
+			i18n.T("Capability"),
+			i18n.T("CPU and Memory"),
+			i18n.T("Networking"),
+			i18n.T("Security Options"),
 		},
 		categories:              tview.NewTextView(),
 		categoryPages:           tview.NewPages(),
@@ -192,29 +203,43 @@ func NewImageBuildDialog() *ImageBuildDialog { //nolint:maintidx
 	buildDialog.categories.SetBorderColor(style.DialogSubBoxBorderColor)
 
 	// basic information setup page
-	basicInfoPageLabelWidth := 17
+	// Calculate label width dynamically
+	basicInfoLabels := []string{
+		i18n.T("context dir:"),
+		i18n.T("container files:"),
+		i18n.T("pull policy:"),
+		i18n.T("image tag:"),
+		i18n.T("registry:"),
+	}
+	basicInfoPageLabelWidth := 0
+	for _, label := range basicInfoLabels {
+		if width := i18n.GetDisplayWidth(label); width > basicInfoPageLabelWidth {
+			basicInfoPageLabelWidth = width
+		}
+	}
+	
 	// context dir path field
 	buildDialog.contextDirectoryPath.SetBackgroundColor(bgColor)
-	buildDialog.contextDirectoryPath.SetLabel(utils.StringToInputLabel("context dir:", basicInfoPageLabelWidth))
+	buildDialog.contextDirectoryPath.SetLabel(utils.StringToInputLabel(i18n.T("context dir:"), basicInfoPageLabelWidth))
 	buildDialog.contextDirectoryPath.SetFieldStyle(style.InputFieldStyle)
 	buildDialog.contextDirectoryPath.SetLabelStyle(style.InputLabelStyle)
 
 	// Containerfile path field
 	buildDialog.containerFilePath.SetBackgroundColor(bgColor)
-	buildDialog.containerFilePath.SetLabel(utils.StringToInputLabel("container files:", basicInfoPageLabelWidth))
+	buildDialog.containerFilePath.SetLabel(utils.StringToInputLabel(i18n.T("container files:"), basicInfoPageLabelWidth))
 	buildDialog.containerFilePath.SetFieldStyle(style.InputFieldStyle)
 	buildDialog.containerFilePath.SetLabelStyle(style.InputLabelStyle)
 
 	// pull policy dropdown
-	buildDialog.pullPolicyField.SetLabel("pull policy:")
+	buildDialog.pullPolicyField.SetLabel(i18n.T("pull policy:"))
 	buildDialog.pullPolicyField.SetLabelWidth(basicInfoPageLabelWidth)
 	buildDialog.pullPolicyField.SetBackgroundColor(bgColor)
 	buildDialog.pullPolicyField.SetLabelColor(fgColor)
 	buildDialog.pullPolicyField.SetOptions([]string{
-		define.PullIfMissing.String(),
-		define.PullAlways.String(),
-		define.PullIfNewer.String(),
-		define.PullNever.String(),
+		i18n.T(define.PullIfMissing.String()),
+		i18n.T(define.PullAlways.String()),
+		i18n.T(define.PullIfNewer.String()),
+		i18n.T(define.PullNever.String()),
 	},
 		nil)
 	buildDialog.pullPolicyField.SetListStyles(ddUnselectedStyle, ddselectedStyle)
@@ -223,13 +248,13 @@ func NewImageBuildDialog() *ImageBuildDialog { //nolint:maintidx
 
 	// tag field
 	buildDialog.tagField.SetBackgroundColor(bgColor)
-	buildDialog.tagField.SetLabel(utils.StringToInputLabel("image tag:", basicInfoPageLabelWidth))
+	buildDialog.tagField.SetLabel(utils.StringToInputLabel(i18n.T("image tag:"), basicInfoPageLabelWidth))
 	buildDialog.tagField.SetFieldStyle(style.InputFieldStyle)
 	buildDialog.tagField.SetLabelStyle(style.InputLabelStyle)
 
 	// registry field
 	buildDialog.registryField.SetBackgroundColor(bgColor)
-	buildDialog.registryField.SetLabel(utils.StringToInputLabel("registry:", basicInfoPageLabelWidth))
+	buildDialog.registryField.SetLabel(utils.StringToInputLabel(i18n.T("registry:"), basicInfoPageLabelWidth))
 	buildDialog.registryField.SetFieldStyle(style.InputFieldStyle)
 	buildDialog.registryField.SetLabelStyle(style.InputLabelStyle)
 
@@ -237,12 +262,12 @@ func NewImageBuildDialog() *ImageBuildDialog { //nolint:maintidx
 	buildSettingFirstColWidth := 15
 
 	buildDialog.buildArgsField.SetBackgroundColor(bgColor)
-	buildDialog.buildArgsField.SetLabel(utils.StringToInputLabel("runtime args:", buildSettingFirstColWidth))
+	buildDialog.buildArgsField.SetLabel(utils.StringToInputLabel(i18n.T("runtime args:"), buildSettingFirstColWidth))
 	buildDialog.buildArgsField.SetFieldStyle(style.InputFieldStyle)
 	buildDialog.buildArgsField.SetLabelStyle(style.InputLabelStyle)
 
 	// format dropdown
-	formatLabel := "output format:"
+	formatLabel := i18n.T("output format:")
 
 	buildDialog.formatField.SetLabel(formatLabel)
 	buildDialog.formatField.SetTitleAlign(tview.AlignRight)
@@ -250,8 +275,8 @@ func NewImageBuildDialog() *ImageBuildDialog { //nolint:maintidx
 	buildDialog.formatField.SetBackgroundColor(bgColor)
 	buildDialog.formatField.SetLabelColor(fgColor)
 	buildDialog.formatField.SetOptions([]string{
-		define.OCI,
-		define.DOCKER,
+		i18n.T(define.OCI),
+		i18n.T(define.DOCKER),
 	},
 		nil)
 	buildDialog.formatField.SetListStyles(ddUnselectedStyle, ddselectedStyle)
@@ -259,92 +284,118 @@ func NewImageBuildDialog() *ImageBuildDialog { //nolint:maintidx
 	buildDialog.formatField.SetFocusedStyle(style.DropDownFocused)
 
 	// squash
-	squashLabel := "squash:"
+	squashLabel := i18n.T("squash:")
 
 	buildDialog.SquashField.SetBackgroundColor(bgColor)
 	buildDialog.SquashField.SetBorder(false)
 	buildDialog.SquashField.SetLabel(squashLabel)
 	buildDialog.SquashField.SetLabelColor(fgColor)
-	buildDialog.SquashField.SetLabelWidth(len(squashLabel) + 1)
+	buildDialog.SquashField.SetLabelWidth(i18n.GetDisplayWidth(squashLabel) + 1)
 	buildDialog.SquashField.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// layers
-	layersLabel := "layers:"
+	layersLabel := i18n.T("layers:")
 
 	buildDialog.layersField.SetBackgroundColor(bgColor)
 	buildDialog.layersField.SetBorder(false)
 	buildDialog.layersField.SetLabel(layersLabel)
 	buildDialog.layersField.SetLabelColor(fgColor)
-	buildDialog.layersField.SetLabelWidth(len(layersLabel) + 1)
+	buildDialog.layersField.SetLabelWidth(i18n.GetDisplayWidth(layersLabel) + 1)
 	buildDialog.layersField.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// no-cache
-	noCacheLabel := "no cache:"
+	noCacheLabel := i18n.T("no-cache:")
 
 	buildDialog.noCacheField.SetBackgroundColor(bgColor)
 	buildDialog.noCacheField.SetBorder(false)
 	buildDialog.noCacheField.SetLabel(noCacheLabel)
 	buildDialog.noCacheField.SetLabelColor(fgColor)
-	buildDialog.noCacheField.SetLabelWidth(len(noCacheLabel) + 1)
+	buildDialog.noCacheField.SetLabelWidth(i18n.GetDisplayWidth(noCacheLabel) + 1)
 	buildDialog.noCacheField.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// labels
 	buildDialog.labelsField.SetBackgroundColor(bgColor)
-	buildDialog.labelsField.SetLabel(utils.StringToInputLabel("labels:", buildSettingFirstColWidth))
+	buildDialog.labelsField.SetLabel(utils.StringToInputLabel(i18n.T("labels:"), buildSettingFirstColWidth))
 	buildDialog.labelsField.SetFieldStyle(style.InputFieldStyle)
 	buildDialog.labelsField.SetLabelStyle(style.InputLabelStyle)
 
 	// annotations
 	buildDialog.annotationsField.SetBackgroundColor(bgColor)
-	buildDialog.annotationsField.SetLabel(utils.StringToInputLabel("annotations:", buildSettingFirstColWidth))
+	buildDialog.annotationsField.SetLabel(utils.StringToInputLabel(i18n.T("annotations:"), buildSettingFirstColWidth))
 	buildDialog.annotationsField.SetFieldStyle(style.InputFieldStyle)
 	buildDialog.annotationsField.SetLabelStyle(style.InputLabelStyle)
 
 	// force remove field
-	buildDialog.removeCntField.SetLabel("remove containers: ")
+	buildDialog.removeCntField.SetLabel(i18n.T("remove containers: "))
 	buildDialog.removeCntField.SetBackgroundColor(bgColor)
 	buildDialog.removeCntField.SetLabelColor(fgColor)
 	buildDialog.removeCntField.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
-	buildDialog.forceRemoveCntField.SetLabel("force remove: ")
+	buildDialog.forceRemoveCntField.SetLabel(i18n.T("force remove: "))
 	buildDialog.forceRemoveCntField.SetLabelWidth(buildSettingFirstColWidth)
 	buildDialog.forceRemoveCntField.SetBackgroundColor(bgColor)
 	buildDialog.forceRemoveCntField.SetLabelColor(fgColor)
 	buildDialog.forceRemoveCntField.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// security options page
-	securityOptionsPAgeLabelWidth := 10
+	// Calculate label width dynamically
+	securityLabels := []string{
+		i18n.T("label:"),
+		i18n.T("apparmor:"),
+		i18n.T("seccomp:"),
+	}
+	securityOptionsPAgeLabelWidth := 0
+	for _, label := range securityLabels {
+		if width := i18n.GetDisplayWidth(label); width > securityOptionsPAgeLabelWidth {
+			securityOptionsPAgeLabelWidth = width
+		}
+	}
 
 	// selinux Label
 	buildDialog.selinuxLabelField.SetBackgroundColor(bgColor)
-	buildDialog.selinuxLabelField.SetLabel(utils.StringToInputLabel("label:", securityOptionsPAgeLabelWidth))
+	buildDialog.selinuxLabelField.SetLabel(utils.StringToInputLabel(i18n.T("label:"), securityOptionsPAgeLabelWidth))
 	buildDialog.selinuxLabelField.SetFieldStyle(style.InputFieldStyle)
 	buildDialog.selinuxLabelField.SetLabelStyle(style.InputLabelStyle)
 
 	// apparmor profile
 	buildDialog.apparmorProfileField.SetBackgroundColor(bgColor)
-	buildDialog.apparmorProfileField.SetLabel(utils.StringToInputLabel("apparmor:", securityOptionsPAgeLabelWidth))
+	buildDialog.apparmorProfileField.SetLabel(utils.StringToInputLabel(i18n.T("apparmor:"), securityOptionsPAgeLabelWidth))
 	buildDialog.apparmorProfileField.SetFieldStyle(style.InputFieldStyle)
 	buildDialog.apparmorProfileField.SetLabelStyle(style.InputLabelStyle)
 
 	// seccomp profile
 	buildDialog.seccompProfilePathField.SetBackgroundColor(bgColor)
-	buildDialog.seccompProfilePathField.SetLabel(utils.StringToInputLabel("seccomp:", securityOptionsPAgeLabelWidth))
+	buildDialog.seccompProfilePathField.SetLabel(utils.StringToInputLabel(i18n.T("seccomp:"), securityOptionsPAgeLabelWidth))
 	buildDialog.seccompProfilePathField.SetFieldStyle(style.InputFieldStyle)
 	buildDialog.seccompProfilePathField.SetLabelStyle(style.InputLabelStyle)
 
 	// networking setup page
-	networkingPageLabelWidth := 13
+	// Calculate label width dynamically based on translated text
+	networkingInputLabels := []string{
+		i18n.T("add host:"),
+		i18n.T("dns servers:"),
+		i18n.T("dns options:"),
+		i18n.T("dns search:"),
+	}
+	networkingPageLabelWidth := 0
+	for _, label := range networkingInputLabels {
+		if width := i18n.GetDisplayWidth(label); width > networkingPageLabelWidth {
+			networkingPageLabelWidth = width
+		}
+	}
+	
+	networkDropdownLabelWidth := i18n.GetDisplayWidth(i18n.T("network:"))
+	httpProxyLabelWidth := i18n.GetDisplayWidth(i18n.T("http proxy:"))
 
 	// network dropdown
-	buildDialog.networkField.SetLabel("network:")
-	buildDialog.networkField.SetLabelWidth(networkingPageLabelWidth)
+	buildDialog.networkField.SetLabel(i18n.T("network:"))
+	buildDialog.networkField.SetLabelWidth(networkDropdownLabelWidth)
 	buildDialog.networkField.SetBackgroundColor(bgColor)
 	buildDialog.networkField.SetLabelColor(fgColor)
 	buildDialog.networkField.SetOptions([]string{
-		define.NetworkDefault.String(),
-		define.NetworkDisabled.String(),
-		define.NetworkEnabled.String(),
+		i18n.T(define.NetworkDefault.String()),
+		i18n.T(define.NetworkDisabled.String()),
+		i18n.T(define.NetworkEnabled.String()),
 	},
 		nil)
 	buildDialog.networkField.SetListStyles(ddUnselectedStyle, ddselectedStyle)
@@ -354,99 +405,124 @@ func NewImageBuildDialog() *ImageBuildDialog { //nolint:maintidx
 	// http proxy checkbox
 	buildDialog.httpProxyField.SetBackgroundColor(bgColor)
 	buildDialog.httpProxyField.SetBorder(false)
-	buildDialog.httpProxyField.SetLabel("http proxy:")
+	buildDialog.httpProxyField.SetLabel(i18n.T("http proxy:"))
 	buildDialog.httpProxyField.SetLabelColor(fgColor)
-	buildDialog.httpProxyField.SetLabelWidth(networkingPageLabelWidth)
+	buildDialog.httpProxyField.SetLabelWidth(httpProxyLabelWidth)
 	buildDialog.httpProxyField.SetFieldBackgroundColor(style.FieldBackgroundColor)
 
 	// Add host field
 	buildDialog.addHostField.SetBackgroundColor(bgColor)
-	buildDialog.addHostField.SetLabel(utils.StringToInputLabel("add host:", networkingPageLabelWidth))
+	buildDialog.addHostField.SetLabel(utils.StringToInputLabel(i18n.T("add host:"), networkingPageLabelWidth))
 	buildDialog.addHostField.SetFieldStyle(style.InputFieldStyle)
 	buildDialog.addHostField.SetLabelStyle(style.InputLabelStyle)
 
 	// DNS servers field
 	buildDialog.dnsServersField.SetBackgroundColor(bgColor)
-	buildDialog.dnsServersField.SetLabel(utils.StringToInputLabel("dns servers:", networkingPageLabelWidth))
+	buildDialog.dnsServersField.SetLabel(utils.StringToInputLabel(i18n.T("dns servers:"), networkingPageLabelWidth))
 	buildDialog.dnsServersField.SetFieldStyle(style.InputFieldStyle)
 	buildDialog.dnsServersField.SetLabelStyle(style.InputLabelStyle)
 
 	// DNS options field
 	buildDialog.dnsOptionsField.SetBackgroundColor(bgColor)
-	buildDialog.dnsOptionsField.SetLabel(utils.StringToInputLabel("dns options:", networkingPageLabelWidth))
+	buildDialog.dnsOptionsField.SetLabel(utils.StringToInputLabel(i18n.T("dns options:"), networkingPageLabelWidth))
 	buildDialog.dnsOptionsField.SetFieldStyle(style.InputFieldStyle)
 	buildDialog.dnsOptionsField.SetLabelStyle(style.InputLabelStyle)
 
 	// DNS search field
 	buildDialog.dnsSearchField.SetBackgroundColor(bgColor)
-	buildDialog.dnsSearchField.SetLabel(utils.StringToInputLabel("dns search:", networkingPageLabelWidth))
+	buildDialog.dnsSearchField.SetLabel(utils.StringToInputLabel(i18n.T("dns search:"), networkingPageLabelWidth))
 	buildDialog.dnsSearchField.SetFieldStyle(style.InputFieldStyle)
 	buildDialog.dnsSearchField.SetLabelStyle(style.InputLabelStyle)
 
 	// capability page
-	capabilityPageLabelWidth := 12
+	// Calculate label width dynamically
+	capabilityLabels := []string{
+		i18n.T("add cap:"),
+		i18n.T("remove cap:"),
+	}
+	capabilityPageLabelWidth := 0
+	for _, label := range capabilityLabels {
+		if width := i18n.GetDisplayWidth(label); width > capabilityPageLabelWidth {
+			capabilityPageLabelWidth = width
+		}
+	}
 
 	// add capability field
 	buildDialog.addCapabilityField.SetBackgroundColor(bgColor)
-	buildDialog.addCapabilityField.SetLabel(utils.StringToInputLabel("add cap:", capabilityPageLabelWidth))
+	buildDialog.addCapabilityField.SetLabel(utils.StringToInputLabel(i18n.T("add cap:"), capabilityPageLabelWidth))
 	buildDialog.addCapabilityField.SetFieldStyle(style.InputFieldStyle)
 	buildDialog.addCapabilityField.SetLabelStyle(style.InputLabelStyle)
 
 	// remove capability field
 	buildDialog.removeCapabilityField.SetBackgroundColor(bgColor)
-	buildDialog.removeCapabilityField.SetLabel(utils.StringToInputLabel("remove cap:", capabilityPageLabelWidth))
+	buildDialog.removeCapabilityField.SetLabel(utils.StringToInputLabel(i18n.T("remove cap:"), capabilityPageLabelWidth))
 	buildDialog.removeCapabilityField.SetFieldStyle(style.InputFieldStyle)
 	buildDialog.removeCapabilityField.SetLabelStyle(style.InputLabelStyle)
 
 	// cpu and memory page
-	cpuMemoryLabelWidth := 14
+	// Calculate label width dynamically
+	cpuMemoryLabels := []string{
+		i18n.T("cpu period:"),
+		i18n.T("cpu quota:"),
+		i18n.T("cpu shares:"),
+		i18n.T("cpu set cpus:"),
+		i18n.T("cpu set mems:"),
+		i18n.T("memory:"),
+		i18n.T("memory swap:"),
+	}
+	cpuMemoryLabelWidth := 0
+	for _, label := range cpuMemoryLabels {
+		if width := i18n.GetDisplayWidth(label); width > cpuMemoryLabelWidth {
+			cpuMemoryLabelWidth = width
+		}
+	}
 	cpuMemoryFieldWidth := 17
 
 	// cpu period field
 	buildDialog.cpuPeriodField.SetBackgroundColor(bgColor)
-	buildDialog.cpuPeriodField.SetLabel(utils.StringToInputLabel("cpu period:", cpuMemoryLabelWidth))
+	buildDialog.cpuPeriodField.SetLabel(utils.StringToInputLabel(i18n.T("cpu period:"), cpuMemoryLabelWidth))
 	buildDialog.cpuPeriodField.SetFieldStyle(style.InputFieldStyle)
 	buildDialog.cpuPeriodField.SetLabelStyle(style.InputLabelStyle)
 	buildDialog.cpuPeriodField.SetFieldWidth(cpuMemoryFieldWidth)
 
 	// cpu quota field
 	buildDialog.cpuQuataField.SetBackgroundColor(bgColor)
-	buildDialog.cpuQuataField.SetLabel(utils.StringToInputLabel("cpu quota:", cpuMemoryLabelWidth))
+	buildDialog.cpuQuataField.SetLabel(utils.StringToInputLabel(i18n.T("cpu quota:"), cpuMemoryLabelWidth))
 	buildDialog.cpuQuataField.SetFieldStyle(style.InputFieldStyle)
 	buildDialog.cpuQuataField.SetLabelStyle(style.InputLabelStyle)
 	buildDialog.cpuQuataField.SetFieldWidth(cpuMemoryFieldWidth)
 
 	// cpu shares field
 	buildDialog.cpuSharesField.SetBackgroundColor(bgColor)
-	buildDialog.cpuSharesField.SetLabel(utils.StringToInputLabel("cpu shares:", cpuMemoryLabelWidth))
+	buildDialog.cpuSharesField.SetLabel(utils.StringToInputLabel(i18n.T("cpu shares:"), cpuMemoryLabelWidth))
 	buildDialog.cpuSharesField.SetFieldStyle(style.InputFieldStyle)
 	buildDialog.cpuSharesField.SetLabelStyle(style.InputLabelStyle)
 	buildDialog.cpuSharesField.SetFieldWidth(cpuMemoryFieldWidth)
 
 	// cpuset cpus field
 	buildDialog.cpuSetCpusField.SetBackgroundColor(bgColor)
-	buildDialog.cpuSetCpusField.SetLabel(utils.StringToInputLabel("cpu set cpus:", cpuMemoryLabelWidth))
+	buildDialog.cpuSetCpusField.SetLabel(utils.StringToInputLabel(i18n.T("cpu set cpus:"), cpuMemoryLabelWidth))
 	buildDialog.cpuSetCpusField.SetFieldStyle(style.InputFieldStyle)
 	buildDialog.cpuSetCpusField.SetLabelStyle(style.InputLabelStyle)
 	buildDialog.cpuSetCpusField.SetFieldWidth(cpuMemoryFieldWidth)
 
 	// cpuset mems field
 	buildDialog.cpuSetMemsField.SetBackgroundColor(bgColor)
-	buildDialog.cpuSetMemsField.SetLabel(utils.StringToInputLabel(" cpu set mems:", cpuMemoryLabelWidth+1))
+	buildDialog.cpuSetMemsField.SetLabel(utils.StringToInputLabel(i18n.T("cpu set mems:"), cpuMemoryLabelWidth))
 	buildDialog.cpuSetMemsField.SetFieldStyle(style.InputFieldStyle)
 	buildDialog.cpuSetMemsField.SetLabelStyle(style.InputLabelStyle)
 	buildDialog.cpuSetMemsField.SetFieldWidth(cpuMemoryFieldWidth)
 
 	// memory field
 	buildDialog.memoryField.SetBackgroundColor(bgColor)
-	buildDialog.memoryField.SetLabel(utils.StringToInputLabel("memory:", cpuMemoryLabelWidth))
+	buildDialog.memoryField.SetLabel(utils.StringToInputLabel(i18n.T("memory:"), cpuMemoryLabelWidth))
 	buildDialog.memoryField.SetFieldStyle(style.InputFieldStyle)
 	buildDialog.memoryField.SetLabelStyle(style.InputLabelStyle)
 	buildDialog.memoryField.SetFieldWidth(cpuMemoryFieldWidth)
 
 	// memory swap field
 	buildDialog.memorySwapField.SetBackgroundColor(bgColor)
-	buildDialog.memorySwapField.SetLabel(utils.StringToInputLabel(" memory swap:", cpuMemoryLabelWidth+1))
+	buildDialog.memorySwapField.SetLabel(utils.StringToInputLabel(i18n.T("memory swap:"), cpuMemoryLabelWidth))
 	buildDialog.memorySwapField.SetFieldStyle(style.InputFieldStyle)
 	buildDialog.memorySwapField.SetLabelStyle(style.InputLabelStyle)
 	buildDialog.memorySwapField.SetFieldWidth(cpuMemoryFieldWidth)
@@ -458,8 +534,8 @@ func NewImageBuildDialog() *ImageBuildDialog { //nolint:maintidx
 
 	// form
 	buildDialog.form.SetBackgroundColor(bgColor)
-	buildDialog.form.AddButton("Cancel", nil)
-	buildDialog.form.AddButton("Build", nil)
+	buildDialog.form.AddButton(i18n.T("Cancel"), nil)
+	buildDialog.form.AddButton(i18n.T("Build"), nil)
 	buildDialog.form.SetButtonsAlign(tview.AlignRight)
 	buildDialog.form.SetButtonBackgroundColor(style.ButtonBgColor)
 
@@ -468,7 +544,7 @@ func NewImageBuildDialog() *ImageBuildDialog { //nolint:maintidx
 	buildDialog.layout.SetBackgroundColor(bgColor)
 	buildDialog.layout.SetBorder(true)
 	buildDialog.layout.SetBorderColor(style.DialogBorderColor)
-	buildDialog.layout.SetTitle("PODMAN IMAGE BUILD")
+	buildDialog.layout.SetTitle(i18n.T("PODMAN IMAGE BUILD"))
 	buildDialog.layout.AddItem(buildDialog.form, dialogs.DialogFormHeight, 0, true)
 
 	return buildDialog
@@ -867,21 +943,21 @@ func (d *ImageBuildDialog) ImageBuildOptions() (images.ImageBuildOptions, error)
 
 	_, pullOption := d.pullPolicyField.GetCurrentOption()
 	switch pullOption {
-	case "missing":
+	case i18n.T("missing"):
 		opts.BuildOptions.PullPolicy = define.PullIfMissing
-	case "always":
+	case i18n.T("always"):
 		opts.BuildOptions.PullPolicy = define.PullAlways
-	case "ifnewer":
+	case i18n.T("ifnewer"):
 		opts.BuildOptions.PullPolicy = define.PullIfNewer
-	case "never":
+	case i18n.T("never"):
 		opts.BuildOptions.PullPolicy = define.PullNever
 	}
 
 	_, format := d.formatField.GetCurrentOption()
 	switch format {
-	case "oci":
+	case i18n.T("oci"):
 		opts.BuildOptions.OutputFormat = define.OCIv1ImageManifest
-	case "docker":
+	case i18n.T("docker"):
 		opts.BuildOptions.OutputFormat = define.Dockerv2ImageManifest
 	}
 
@@ -980,11 +1056,11 @@ func (d *ImageBuildDialog) ImageBuildOptions() (images.ImageBuildOptions, error)
 	// network policy
 	_, configureNetwork := d.networkField.GetCurrentOption()
 	switch configureNetwork {
-	case "NetworkDefault":
+	case i18n.T("NetworkDefault"):
 		opts.BuildOptions.ConfigureNetwork = define.NetworkDefault
-	case "NetworkDisabled":
+	case i18n.T("NetworkDisabled"):
 		opts.BuildOptions.ConfigureNetwork = define.NetworkDisabled
-	case "NetworkEnabled":
+	case i18n.T("NetworkEnabled"):
 		opts.BuildOptions.ConfigureNetwork = define.NetworkEnabled
 	}
 	// add hosts
@@ -1069,12 +1145,26 @@ func (d *ImageBuildDialog) setupLayout() {
 	d.basicInfoPage.SetBackgroundColor(bgColor)
 
 	// layers setup page
+	// Calculate widths for each checkbox field based on label width
+	formatLabelWidth := i18n.GetDisplayWidth(i18n.T("output format:"))
+	squashLabelWidth := i18n.GetDisplayWidth(i18n.T("squash:"))
+	layersLabelWidth := i18n.GetDisplayWidth(i18n.T("layers:"))
+	noCacheLabelWidth := i18n.GetDisplayWidth(i18n.T("no-cache:"))
+	
+	// Checkbox needs: label width + space + checkbox "[X]" (3 chars) + minimal padding
+	// Use fixed width (proportion=0) to ensure checkboxes are always visible
+	formatFieldWidth := formatLabelWidth + 10 // dropdown needs space for "oci"/"docker" value
+	squashFieldWidth := squashLabelWidth + 4  //nolint:mnd
+	layersFieldWidth := layersLabelWidth + 4  //nolint:mnd
+	noCacheFieldWidth := noCacheLabelWidth + 4 //nolint:mnd
+	
 	secondRowLayout := tview.NewFlex().SetDirection(tview.FlexColumn)
 	secondRowLayout.SetBackgroundColor(bgColor)
-	secondRowLayout.AddItem(d.formatField, 0, 2, true) //nolint:mnd
-	secondRowLayout.AddItem(d.SquashField, 0, 1, true)
-	secondRowLayout.AddItem(d.layersField, 0, 1, true)
-	secondRowLayout.AddItem(d.noCacheField, 0, 1, true)
+	secondRowLayout.AddItem(d.formatField, formatFieldWidth, 0, true)
+	secondRowLayout.AddItem(d.SquashField, squashFieldWidth, 0, true)
+	secondRowLayout.AddItem(d.layersField, layersFieldWidth, 0, true)
+	secondRowLayout.AddItem(d.noCacheField, noCacheFieldWidth, 0, true)
+	secondRowLayout.AddItem(utils.EmptyBoxSpace(bgColor), 0, 1, false) // fill remaining space
 
 	cntRmRowLayout := tview.NewFlex().SetDirection(tview.FlexColumn)
 	cntRmRowLayout.SetBackgroundColor(bgColor)
@@ -1146,22 +1236,22 @@ func (d *ImageBuildDialog) setupLayout() {
 	d.cpuMemoryPage.AddItem(utils.EmptyBoxSpace(bgColor), 0, 1, true)
 	d.cpuMemoryPage.AddItem(memSwapRow, 0, 1, true)
 
-	// adding category pages
-	d.categoryPages.AddPage(d.categoryLabels[buildDialogBasicInfoPageIndex], d.basicInfoPage, true, true)
-	d.categoryPages.AddPage(d.categoryLabels[buildDialogBuildInfoPageIndex], d.buildInfoPage, true, true)
-	d.categoryPages.AddPage(d.categoryLabels[buildDialogCapabilityPageIndex], d.capabilityPage, true, true)
-	d.categoryPages.AddPage(d.categoryLabels[buildDialogCPUMemoryPageIndex], d.cpuMemoryPage, true, true)
-	d.categoryPages.AddPage(d.categoryLabels[buildDialogNetworkingPageIndex], d.networkingPage, true, true)
-	d.categoryPages.AddPage(d.categoryLabels[buildDialogSecurityOptsPageIndex], d.securityOptsPage, true, true)
+	// adding category pages (use constant names instead of translated labels)
+	d.categoryPages.AddPage(buildDialogBasicInfoPageName, d.basicInfoPage, true, true)
+	d.categoryPages.AddPage(buildDialogBuildInfoPageName, d.buildInfoPage, true, true)
+	d.categoryPages.AddPage(buildDialogCapabilityPageName, d.capabilityPage, true, true)
+	d.categoryPages.AddPage(buildDialogCPUMemoryPageName, d.cpuMemoryPage, true, true)
+	d.categoryPages.AddPage(buildDialogNetworkingPageName, d.networkingPage, true, true)
+	d.categoryPages.AddPage(buildDialogSecurityOptsPageName, d.securityOptsPage, true, true)
 
 	// add it to layout.
 	_, layoutWidth := utils.AlignStringListWidth(d.categoryLabels)
-	layout := tview.NewFlex().SetDirection(tview.FlexColumn)
-	layout.AddItem(d.categories, layoutWidth+6, 0, true) //nolint:mnd
-	layout.AddItem(d.categoryPages, 0, 1, true)
-	layout.SetBackgroundColor(bgColor)
+	d.contentLayout = tview.NewFlex().SetDirection(tview.FlexColumn)
+	d.contentLayout.AddItem(d.categories, layoutWidth+6, 0, true) //nolint:mnd
+	d.contentLayout.AddItem(d.categoryPages, 0, 1, true)
+	d.contentLayout.SetBackgroundColor(bgColor)
 
-	d.layout.AddItem(layout, 0, 1, true)
+	d.layout.AddItem(d.contentLayout, 0, 1, true)
 }
 
 func (d *ImageBuildDialog) initData() {
@@ -1237,8 +1327,16 @@ func (d *ImageBuildDialog) setActiveCategory(index int) {
 
 	d.categories.SetText(strings.Join(ctgList, "\n"))
 
-	// switch the page
-	d.categoryPages.SwitchToPage(d.categoryLabels[index])
+	// switch the page (use constant names instead of translated labels)
+	pageNames := []string{
+		buildDialogBasicInfoPageName,
+		buildDialogBuildInfoPageName,
+		buildDialogCapabilityPageName,
+		buildDialogCPUMemoryPageName,
+		buildDialogNetworkingPageName,
+		buildDialogSecurityOptsPageName,
+	}
+	d.categoryPages.SwitchToPage(pageNames[index])
 }
 
 func (d *ImageBuildDialog) nextCategory() {
@@ -1441,4 +1539,277 @@ func (d *ImageBuildDialog) setSecurityOptionsPageNextFocus() {
 	}
 
 	d.focusElement = buildDialogFormFocus
+}
+
+// UpdateLanguage updates all translatable text when language changes
+func (d *ImageBuildDialog) UpdateLanguage() {
+	// Update category labels
+	d.categoryLabels = []string{
+		i18n.T("Basic Information"),
+		i18n.T("Build Settings"),
+		i18n.T("Capability"),
+		i18n.T("CPU and Memory"),
+		i18n.T("Networking"),
+		i18n.T("Security Options"),
+	}
+
+	// Update dialog title
+	d.layout.SetTitle(i18n.T("PODMAN IMAGE BUILD"))
+
+	// Update form buttons
+	d.form.ClearButtons()
+	d.form.AddButton(i18n.T("Cancel"), nil)
+	d.form.AddButton(i18n.T("Build"), nil)
+
+	// Re-set button handlers
+	if d.cancelHandler != nil {
+		cancelButton := d.form.GetButton(d.form.GetButtonCount() - 2) //nolint:mnd
+		cancelButton.SetSelectedFunc(d.cancelHandler)
+	}
+
+	if d.buildHandler != nil {
+		buildButton := d.form.GetButton(d.form.GetButtonCount() - 1)
+		buildButton.SetSelectedFunc(d.buildHandler)
+	}
+
+	// Calculate label widths for each page by finding the longest label
+	// Basic Information page
+	basicInfoLabels := []string{
+		i18n.T("context dir:"),
+		i18n.T("container files:"),
+		i18n.T("pull policy:"),
+		i18n.T("image tag:"),
+		i18n.T("registry:"),
+	}
+	basicInfoPageLabelWidth := 0
+	for _, label := range basicInfoLabels {
+		if width := i18n.GetDisplayWidth(label); width > basicInfoPageLabelWidth {
+			basicInfoPageLabelWidth = width
+		}
+	}
+
+	// Build Settings page
+	buildSettingLabels := []string{
+		i18n.T("runtime args:"),
+		i18n.T("output format:"),
+		i18n.T("labels:"),
+		i18n.T("annotations:"),
+	}
+	buildSettingFirstColWidth := 0
+	for _, label := range buildSettingLabels {
+		if width := i18n.GetDisplayWidth(label); width > buildSettingFirstColWidth {
+			buildSettingFirstColWidth = width
+		}
+	}
+
+	// Security Options page
+	securityLabels := []string{
+		i18n.T("label:"),
+		i18n.T("apparmor:"),
+		i18n.T("seccomp:"),
+	}
+	securityOptionsPAgeLabelWidth := 0
+	for _, label := range securityLabels {
+		if width := i18n.GetDisplayWidth(label); width > securityOptionsPAgeLabelWidth {
+			securityOptionsPAgeLabelWidth = width
+		}
+	}
+
+	// Networking page - calculate width for input fields (not dropdown/checkbox)
+	networkingInputLabels := []string{
+		i18n.T("add host:"),
+		i18n.T("dns servers:"),
+		i18n.T("dns options:"),
+		i18n.T("dns search:"),
+	}
+	networkingPageLabelWidth := 0
+	for _, label := range networkingInputLabels {
+		if width := i18n.GetDisplayWidth(label); width > networkingPageLabelWidth {
+			networkingPageLabelWidth = width
+		}
+	}
+	
+	// Calculate width for dropdown/checkbox labels separately
+	networkDropdownLabelWidth := i18n.GetDisplayWidth(i18n.T("network:"))
+	httpProxyLabelWidth := i18n.GetDisplayWidth(i18n.T("http proxy:"))
+
+	// Capability page
+	capabilityLabels := []string{
+		i18n.T("add cap:"),
+		i18n.T("remove cap:"),
+	}
+	capabilityPageLabelWidth := 0
+	for _, label := range capabilityLabels {
+		if width := i18n.GetDisplayWidth(label); width > capabilityPageLabelWidth {
+			capabilityPageLabelWidth = width
+		}
+	}
+
+	// CPU and Memory page
+	cpuMemoryLabels := []string{
+		i18n.T("cpu period:"),
+		i18n.T("cpu quota:"),
+		i18n.T("cpu shares:"),
+		i18n.T("cpu set cpus:"),
+		i18n.T("cpu set mems:"),
+		i18n.T("memory:"),
+		i18n.T("memory swap:"),
+	}
+	cpuMemoryLabelWidth := 0
+	for _, label := range cpuMemoryLabels {
+		if width := i18n.GetDisplayWidth(label); width > cpuMemoryLabelWidth {
+			cpuMemoryLabelWidth = width
+		}
+	}
+
+	// Update Basic Information page labels
+	d.contextDirectoryPath.SetLabel(utils.StringToInputLabel(i18n.T("context dir:"), basicInfoPageLabelWidth))
+	d.containerFilePath.SetLabel(utils.StringToInputLabel(i18n.T("container files:"), basicInfoPageLabelWidth))
+	d.pullPolicyField.SetLabel(i18n.T("pull policy:"))
+	d.pullPolicyField.SetLabelWidth(basicInfoPageLabelWidth)
+	d.tagField.SetLabel(utils.StringToInputLabel(i18n.T("image tag:"), basicInfoPageLabelWidth))
+	d.registryField.SetLabel(utils.StringToInputLabel(i18n.T("registry:"), basicInfoPageLabelWidth))
+
+	// Update pull policy options
+	currentPullPolicyIndex, _ := d.pullPolicyField.GetCurrentOption()
+	d.pullPolicyField.SetOptions([]string{
+		i18n.T(define.PullIfMissing.String()),
+		i18n.T(define.PullAlways.String()),
+		i18n.T(define.PullIfNewer.String()),
+		i18n.T(define.PullNever.String()),
+	}, nil)
+	d.pullPolicyField.SetCurrentOption(currentPullPolicyIndex)
+
+	// Update Build Settings page labels
+	d.buildArgsField.SetLabel(utils.StringToInputLabel(i18n.T("runtime args:"), buildSettingFirstColWidth))
+	d.formatField.SetLabel(i18n.T("output format:"))
+	d.formatField.SetLabelWidth(buildSettingFirstColWidth)
+	
+	// Update format options
+	currentFormatIndex, _ := d.formatField.GetCurrentOption()
+	d.formatField.SetOptions([]string{
+		i18n.T(define.OCI),
+		i18n.T(define.DOCKER),
+	}, nil)
+	d.formatField.SetCurrentOption(currentFormatIndex)
+
+	squashLabel := i18n.T("squash:")
+	d.SquashField.SetLabel(squashLabel)
+	d.SquashField.SetLabelWidth(i18n.GetDisplayWidth(squashLabel) + 1)
+
+	layersLabel := i18n.T("layers:")
+	d.layersField.SetLabel(layersLabel)
+	d.layersField.SetLabelWidth(i18n.GetDisplayWidth(layersLabel) + 1)
+
+	noCacheLabel := i18n.T("no-cache:")
+	d.noCacheField.SetLabel(noCacheLabel)
+	d.noCacheField.SetLabelWidth(i18n.GetDisplayWidth(noCacheLabel) + 1)
+
+	d.labelsField.SetLabel(utils.StringToInputLabel(i18n.T("labels:"), buildSettingFirstColWidth))
+	d.annotationsField.SetLabel(utils.StringToInputLabel(i18n.T("annotations:"), buildSettingFirstColWidth))
+	d.removeCntField.SetLabel(i18n.T("remove containers: "))
+	d.forceRemoveCntField.SetLabel(i18n.T("force remove: "))
+	d.forceRemoveCntField.SetLabelWidth(buildSettingFirstColWidth)
+
+	// Update Security Options page labels
+	d.selinuxLabelField.SetLabel(utils.StringToInputLabel(i18n.T("label:"), securityOptionsPAgeLabelWidth))
+	d.apparmorProfileField.SetLabel(utils.StringToInputLabel(i18n.T("apparmor:"), securityOptionsPAgeLabelWidth))
+	d.seccompProfilePathField.SetLabel(utils.StringToInputLabel(i18n.T("seccomp:"), securityOptionsPAgeLabelWidth))
+
+	// Update Networking page labels
+	d.networkField.SetLabel(i18n.T("network:"))
+	d.networkField.SetLabelWidth(networkDropdownLabelWidth)
+	
+	// Update network options
+	currentNetworkIndex, _ := d.networkField.GetCurrentOption()
+	d.networkField.SetOptions([]string{
+		i18n.T(define.NetworkDefault.String()),
+		i18n.T(define.NetworkDisabled.String()),
+		i18n.T(define.NetworkEnabled.String()),
+	}, nil)
+	d.networkField.SetCurrentOption(currentNetworkIndex)
+
+	d.httpProxyField.SetLabel(i18n.T("http proxy:"))
+	d.httpProxyField.SetLabelWidth(httpProxyLabelWidth)
+	d.addHostField.SetLabel(utils.StringToInputLabel(i18n.T("add host:"), networkingPageLabelWidth))
+	d.dnsServersField.SetLabel(utils.StringToInputLabel(i18n.T("dns servers:"), networkingPageLabelWidth))
+	d.dnsOptionsField.SetLabel(utils.StringToInputLabel(i18n.T("dns options:"), networkingPageLabelWidth))
+	d.dnsSearchField.SetLabel(utils.StringToInputLabel(i18n.T("dns search:"), networkingPageLabelWidth))
+
+	// Update Capability page labels
+	d.addCapabilityField.SetLabel(utils.StringToInputLabel(i18n.T("add cap:"), capabilityPageLabelWidth))
+	d.removeCapabilityField.SetLabel(utils.StringToInputLabel(i18n.T("remove cap:"), capabilityPageLabelWidth))
+
+	// Update CPU and Memory page labels
+	d.cpuPeriodField.SetLabel(utils.StringToInputLabel(i18n.T("cpu period:"), cpuMemoryLabelWidth))
+	d.cpuQuataField.SetLabel(utils.StringToInputLabel(i18n.T("cpu quota:"), cpuMemoryLabelWidth))
+	d.cpuSharesField.SetLabel(utils.StringToInputLabel(i18n.T("cpu shares:"), cpuMemoryLabelWidth))
+	d.cpuSetCpusField.SetLabel(utils.StringToInputLabel(i18n.T("cpu set cpus:"), cpuMemoryLabelWidth))
+	d.cpuSetMemsField.SetLabel(utils.StringToInputLabel(i18n.T("cpu set mems:"), cpuMemoryLabelWidth))
+	d.memoryField.SetLabel(utils.StringToInputLabel(i18n.T("memory:"), cpuMemoryLabelWidth))
+	d.memorySwapField.SetLabel(utils.StringToInputLabel(i18n.T("memory swap:"), cpuMemoryLabelWidth))
+
+	// Recalculate and update left sidebar width
+	_, newLayoutWidth := utils.AlignStringListWidth(d.categoryLabels)
+	if d.contentLayout != nil {
+		// Remove old items
+		d.contentLayout.Clear()
+		// Re-add with new width
+		bgColor := style.DialogBgColor
+		d.contentLayout.SetBackgroundColor(bgColor)
+		d.contentLayout.AddItem(d.categories, newLayoutWidth+6, 0, true) //nolint:mnd
+		d.contentLayout.AddItem(d.categoryPages, 0, 1, true)
+	}
+
+	// Rebuild Build Settings page second row with new widths
+	d.rebuildBuildSettingsRow()
+
+	// Update categories display
+	d.setActiveCategory(d.activePageIndex)
+}
+
+// rebuildBuildSettingsRow rebuilds the second row of Build Settings page with correct widths
+func (d *ImageBuildDialog) rebuildBuildSettingsRow() {
+	bgColor := style.DialogBgColor
+	
+	// Calculate widths for each field based on current language
+	formatLabelWidth := i18n.GetDisplayWidth(i18n.T("output format:"))
+	squashLabelWidth := i18n.GetDisplayWidth(i18n.T("squash:"))
+	layersLabelWidth := i18n.GetDisplayWidth(i18n.T("layers:"))
+	noCacheLabelWidth := i18n.GetDisplayWidth(i18n.T("no-cache:"))
+	
+	// Calculate field widths
+	formatFieldWidth := formatLabelWidth + 10 // dropdown needs space for "oci"/"docker" value
+	squashFieldWidth := squashLabelWidth + 4  //nolint:mnd
+	layersFieldWidth := layersLabelWidth + 4  //nolint:mnd
+	noCacheFieldWidth := noCacheLabelWidth + 4 //nolint:mnd
+	
+	// Create new row layout
+	secondRowLayout := tview.NewFlex().SetDirection(tview.FlexColumn)
+	secondRowLayout.SetBackgroundColor(bgColor)
+	secondRowLayout.AddItem(d.formatField, formatFieldWidth, 0, true)
+	secondRowLayout.AddItem(d.SquashField, squashFieldWidth, 0, true)
+	secondRowLayout.AddItem(d.layersField, layersFieldWidth, 0, true)
+	secondRowLayout.AddItem(d.noCacheField, noCacheFieldWidth, 0, true)
+	secondRowLayout.AddItem(utils.EmptyBoxSpace(bgColor), 0, 1, false)
+	
+	// Rebuild build info page
+	d.buildInfoPage.Clear()
+	d.buildInfoPage.SetDirection(tview.FlexRow)
+	d.buildInfoPage.AddItem(d.buildArgsField, 1, 0, true)
+	d.buildInfoPage.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, true)
+	d.buildInfoPage.AddItem(secondRowLayout, 1, 0, true)
+	d.buildInfoPage.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, true)
+	
+	cntRmRowLayout := tview.NewFlex().SetDirection(tview.FlexColumn)
+	cntRmRowLayout.SetBackgroundColor(bgColor)
+	cntRmRowLayout.AddItem(d.forceRemoveCntField, 0, 1, true)
+	cntRmRowLayout.AddItem(d.removeCntField, 0, 2, true) //nolint:mnd
+	
+	d.buildInfoPage.AddItem(cntRmRowLayout, 1, 0, true)
+	d.buildInfoPage.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, true)
+	d.buildInfoPage.AddItem(d.labelsField, 1, 0, true)
+	d.buildInfoPage.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, true)
+	d.buildInfoPage.AddItem(d.annotationsField, 1, 0, true)
+	d.buildInfoPage.SetBackgroundColor(bgColor)
 }

@@ -3,6 +3,7 @@ package help
 import (
 	"fmt"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/ui/style"
 	"github.com/containers/podman-tui/ui/utils"
 	"github.com/gdamore/tcell/v2"
@@ -13,16 +14,22 @@ import (
 type Help struct {
 	*tview.Box
 
-	title  string
-	layout *tview.Flex
+	title    string
+	layout   *tview.Flex
+	keyinfo  *tview.Table
+	appinfo  *tview.TextView
+	appName  string
+	appVer   string
 }
 
 // NewHelp returns a help screen primitive.
 func NewHelp(appName string, appVersion string) *Help {
 	// returns the help primitive
 	help := &Help{
-		Box:   tview.NewBox(),
-		title: "help",
+		Box:     tview.NewBox(),
+		title:   "help",
+		appName: appName,
+		appVer:  appVersion,
 	}
 
 	// colors
@@ -32,23 +39,23 @@ func NewHelp(appName string, appVersion string) *Help {
 	borderColor := style.BorderColor
 
 	// application keys description table
-	keyinfo := tview.NewTable()
-	keyinfo.SetBackgroundColor(bgColor)
-	keyinfo.SetFixed(1, 1)
-	keyinfo.SetSelectable(false, false)
+	help.keyinfo = tview.NewTable()
+	help.keyinfo.SetBackgroundColor(bgColor)
+	help.keyinfo.SetFixed(1, 1)
+	help.keyinfo.SetSelectable(false, false)
 
 	// application description and version text view
-	appinfo := tview.NewTextView().
+	help.appinfo = tview.NewTextView().
 		SetDynamicColors(true).
 		SetWrap(true).
 		SetTextAlign(tview.AlignLeft)
-	appinfo.SetBackgroundColor(bgColor)
+	help.appinfo.SetBackgroundColor(bgColor)
 
-	licenseInfo := "released under the Apache License 2.0."
+	licenseInfo := i18n.T("released under the Apache License 2.0.")
 	appInfoText := fmt.Sprintf("%s %s - %s", appName, appVersion, licenseInfo)
 
-	appinfo.SetText(appInfoText)
-	appinfo.SetTextColor(headerColor)
+	help.appinfo.SetText(appInfoText)
+	help.appinfo.SetTextColor(headerColor)
 
 	// help table items
 	// the items will be divided into two separate tables
@@ -66,14 +73,14 @@ func NewHelp(appName string, appVersion string) *Help {
 			}
 		}
 
-		keyinfo.SetCell(rowIndex, colIndex,
+		help.keyinfo.SetCell(rowIndex, colIndex,
 			tview.NewTableCell(fmt.Sprintf("%s:", utils.UIKeysBindings[i].KeyLabel)). //nolint:perfsprint
 													SetAlign(tview.AlignRight).
 													SetBackgroundColor(bgColor).
 													SetSelectable(true).SetTextColor(headerColor))
 
-		keyinfo.SetCell(rowIndex, colIndex+1,
-			tview.NewTableCell(utils.UIKeysBindings[i].KeyDesc).
+		help.keyinfo.SetCell(rowIndex, colIndex+1,
+			tview.NewTableCell(i18n.T(utils.UIKeysBindings[i].KeyDesc)).
 				SetAlign(tview.AlignLeft).
 				SetBackgroundColor(bgColor).
 				SetSelectable(true).SetTextColor(fgColor))
@@ -83,9 +90,9 @@ func NewHelp(appName string, appVersion string) *Help {
 
 	// appinfo and appkeys layout
 	mlayout := tview.NewFlex().SetDirection(tview.FlexRow)
-	mlayout.AddItem(appinfo, 1, 0, false)
+	mlayout.AddItem(help.appinfo, 1, 0, false)
 	mlayout.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
-	mlayout.AddItem(keyinfo, 0, 1, false)
+	mlayout.AddItem(help.keyinfo, 0, 1, false)
 	mlayout.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
 
 	// layout
@@ -113,6 +120,34 @@ func (help *Help) HasFocus() bool {
 // Focus is called when this primitive receives focus.
 func (help *Help) Focus(delegate func(p tview.Primitive)) {
 	delegate(help.layout)
+}
+
+// RefreshLabels refreshes all key descriptions with current language translations.
+func (help *Help) RefreshLabels() {
+	// Update license info
+	licenseInfo := i18n.T("released under the Apache License 2.0.")
+	appInfoText := fmt.Sprintf("%s %s - %s", help.appName, help.appVer, licenseInfo)
+	help.appinfo.SetText(appInfoText)
+	
+	// Update key descriptions
+	rowIndex := 0
+	colIndex := 0
+	needInit := true
+	maxRowIndex := len(utils.UIKeysBindings) / 2 //nolint:mnd
+
+	for i := range utils.UIKeysBindings {
+		if i >= maxRowIndex {
+			if needInit {
+				colIndex = 2
+				rowIndex = 0
+				needInit = false
+			}
+		}
+
+		// Update only the description cell with translated text
+		help.keyinfo.GetCell(rowIndex, colIndex+1).SetText(i18n.T(utils.UIKeysBindings[i].KeyDesc))
+		rowIndex++
+	}
 }
 
 // Draw draws this primitive onto the screen.

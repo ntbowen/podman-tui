@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/containers/common/libnetwork/types"
+	"github.com/containers/podman-tui/i18n"
 	"github.com/docker/go-units"
 )
 
@@ -18,8 +19,9 @@ func SizeToStr(size int64) string {
 // CreatedToStr converts duration to human readable format.
 func CreatedToStr(duration int64) string {
 	created := time.Unix(duration, 0).UTC()
+	humanDuration := units.HumanDuration(time.Since(created))
 
-	return units.HumanDuration(time.Since(created)) + " ago"
+	return i18n.TranslateTime(humanDuration) + " " + i18n.T("ago")
 }
 
 // PrintJSON convert data interface to json string.

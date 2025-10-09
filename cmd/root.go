@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/containers/podman-tui/app"
+	"github.com/containers/podman-tui/i18n"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/sirupsen/logrus"
@@ -69,6 +70,11 @@ func run(cmd *cobra.Command, args []string) error { //nolint:cyclop
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: logOutput, TimeFormat: time.RFC3339})
 
 	log.Info().Msg(runLog)
+	
+	// Load saved language preference
+	if err := i18n.LoadLanguageConfig(); err != nil {
+		log.Warn().Msgf("failed to load language config: %v", err)
+	}
 	// check if CONTAINER_PASSPHRASE environment variable is set and not empty
 	// otherwise set with value dummy value
 	// its required since podman/pkg/podman is using terminal package

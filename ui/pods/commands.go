@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/containers/podman-tui/i18n"
 	ppods "github.com/containers/podman-tui/pdcs/pods"
 	"github.com/containers/podman-tui/ui/dialogs"
 	"github.com/containers/podman-tui/ui/style"
@@ -22,9 +23,9 @@ func (p *Pods) runCommand(cmd string) { //nolint:cyclop
 	case "pause":
 		p.pause()
 	case utils.PruneCommandLabel:
-		p.confirmDialog.SetTitle("podman pod prune")
+		p.confirmDialog.SetTitle(i18n.T("podman pod prune"))
 		p.confirmData = utils.PruneCommandLabel
-		p.confirmDialog.SetText("Are you sure you want to remove all stopped pods ?")
+		p.confirmDialog.SetText(i18n.T("Are you sure you want to remove all stopped pods ?"))
 		p.confirmDialog.Display()
 	case "restart":
 		p.restart()
@@ -66,7 +67,7 @@ func (p *Pods) stats() {
 func (p *Pods) create() {
 	podSpec := p.createDialog.GetPodSpec()
 
-	p.progressDialog.SetTitle("pod create in progress")
+	p.progressDialog.SetTitle(i18n.T("pod create in progress"))
 	p.progressDialog.Display()
 
 	createFunc := func() {
@@ -75,7 +76,7 @@ func (p *Pods) create() {
 		p.progressDialog.Hide()
 
 		if err != nil {
-			p.displayError("POD CREATE ERROR", err)
+			p.displayError(i18n.T("POD CREATE ERROR"), err)
 			p.appFocusHandler()
 
 			return
@@ -95,7 +96,7 @@ func (p *Pods) inspect() {
 
 	data, err := ppods.Inspect(podID)
 	if err != nil {
-		title := fmt.Sprintf("POD (%s) INSPECT ERROR", podID)
+		title := fmt.Sprintf(i18n.T("POD (%s) INSPECT ERROR"), podID)
 
 		p.displayError(title, err)
 
@@ -104,7 +105,7 @@ func (p *Pods) inspect() {
 
 	headerLabel := fmt.Sprintf("%12s (%s)", podID, podName)
 
-	p.messageDialog.SetTitle("podman pod inspect")
+	p.messageDialog.SetTitle(i18n.T("podman pod inspect"))
 	p.messageDialog.SetText(dialogs.MessagePodInfo, headerLabel, data)
 	p.messageDialog.DisplayFullSize()
 }
@@ -116,7 +117,7 @@ func (p *Pods) kill() {
 		return
 	}
 
-	p.progressDialog.SetTitle("pod kill in progress")
+	p.progressDialog.SetTitle(i18n.T("pod kill in progress"))
 	p.progressDialog.Display()
 
 	kill := func(id string) {
@@ -125,7 +126,7 @@ func (p *Pods) kill() {
 		p.progressDialog.Hide()
 
 		if err != nil {
-			title := fmt.Sprintf("POD (%s) KILL ERROR", p.selectedID)
+			title := fmt.Sprintf(i18n.T("POD (%s) KILL ERROR"), p.selectedID)
 
 			p.displayError(title, err)
 			p.appFocusHandler()
@@ -144,7 +145,7 @@ func (p *Pods) pause() {
 		return
 	}
 
-	p.progressDialog.SetTitle("pod pause in progress")
+	p.progressDialog.SetTitle(i18n.T("pod pause in progress"))
 	p.progressDialog.Display()
 
 	pause := func(id string) {
@@ -153,7 +154,7 @@ func (p *Pods) pause() {
 		p.progressDialog.Hide()
 
 		if err != nil {
-			title := fmt.Sprintf("POD (%s) PAUSE ERROR", p.selectedID)
+			title := fmt.Sprintf(i18n.T("POD (%s) PAUSE ERROR"), p.selectedID)
 
 			p.displayError(title, err)
 			p.appFocusHandler()
@@ -166,7 +167,7 @@ func (p *Pods) pause() {
 }
 
 func (p *Pods) prune() {
-	p.progressDialog.SetTitle("pod prune in progress")
+	p.progressDialog.SetTitle(i18n.T("pod prune in progress"))
 	p.progressDialog.Display()
 
 	unpause := func() {
@@ -175,7 +176,7 @@ func (p *Pods) prune() {
 		p.progressDialog.Hide()
 
 		if err != nil {
-			p.displayError("PODS PRUNE ERROR", err)
+			p.displayError(i18n.T("PODS PRUNE ERROR"), err)
 			p.appFocusHandler()
 
 			return
@@ -184,7 +185,7 @@ func (p *Pods) prune() {
 		if len(errData) > 0 {
 			errMessages := fmt.Errorf("%w %v", errPodPrune, errData)
 
-			p.displayError("PODS PRUNE ERROR", errMessages)
+			p.displayError(i18n.T("PODS PRUNE ERROR"), errMessages)
 			p.appFocusHandler()
 		}
 	}
@@ -199,7 +200,7 @@ func (p *Pods) restart() {
 		return
 	}
 
-	p.progressDialog.SetTitle("pod restart in progress")
+	p.progressDialog.SetTitle(i18n.T("pod restart in progress"))
 	p.progressDialog.Display()
 
 	restart := func(id string) {
@@ -208,7 +209,7 @@ func (p *Pods) restart() {
 		p.progressDialog.Hide()
 
 		if err != nil {
-			title := fmt.Sprintf("POD (%s) RESTART ERROR", p.selectedID)
+			title := fmt.Sprintf(i18n.T("POD (%s) RESTART ERROR"), p.selectedID)
 
 			p.displayError(title, err)
 			p.appFocusHandler()
@@ -228,21 +229,21 @@ func (p *Pods) rm() {
 		return
 	}
 
-	p.confirmDialog.SetTitle("podman pod rm")
+	p.confirmDialog.SetTitle(i18n.T("podman pod rm"))
 
 	p.confirmData = "rm"
 	bgColor := style.GetColorHex(style.DialogBorderColor)
 	fgColor := style.GetColorHex(style.DialogFgColor)
 	podItem := fmt.Sprintf("[%s:%s:b]POD ID:[:-:-] %s (%s)", fgColor, bgColor, podID, podName)
 
-	description := fmt.Sprintf("%s\n\nAre you sure you want to remove the selected pod?", podItem) //nolint:perfsprint
+	description := fmt.Sprintf("%s\n\n%s", podItem, i18n.T("Are you sure you want to remove the selected pod?")) //nolint:perfsprint
 
 	p.confirmDialog.SetText(description)
 	p.confirmDialog.Display()
 }
 
 func (p *Pods) remove() {
-	p.progressDialog.SetTitle("pod remove in progress")
+	p.progressDialog.SetTitle(i18n.T("pod remove in progress"))
 	p.progressDialog.Display()
 
 	remove := func(id string) {
@@ -251,7 +252,7 @@ func (p *Pods) remove() {
 		p.progressDialog.Hide()
 
 		if err != nil {
-			title := fmt.Sprintf("POD (%s) REMOVE ERROR", p.selectedID)
+			title := fmt.Sprintf(i18n.T("POD (%s) REMOVE ERROR"), p.selectedID)
 
 			p.displayError(title, err)
 			p.appFocusHandler()
@@ -260,7 +261,7 @@ func (p *Pods) remove() {
 		}
 
 		if len(errData) > 0 {
-			title := fmt.Sprintf("POD (%s) REMOVE ERROR", p.selectedID)
+			title := fmt.Sprintf(i18n.T("POD (%s) REMOVE ERROR"), p.selectedID)
 
 			p.displayError(title, fmt.Errorf("%w %v", errPodRemove, errData))
 			p.appFocusHandler()
@@ -277,7 +278,7 @@ func (p *Pods) start() {
 		return
 	}
 
-	p.progressDialog.SetTitle("pod start in progress")
+	p.progressDialog.SetTitle(i18n.T("pod start in progress"))
 	p.progressDialog.Display()
 
 	start := func(id string) {
@@ -286,7 +287,7 @@ func (p *Pods) start() {
 		p.progressDialog.Hide()
 
 		if err != nil {
-			title := fmt.Sprintf("POD (%s) START ERROR", p.selectedID)
+			title := fmt.Sprintf(i18n.T("POD (%s) START ERROR"), p.selectedID)
 
 			p.displayError(title, err)
 			p.appFocusHandler()
@@ -305,7 +306,7 @@ func (p *Pods) stop() {
 		return
 	}
 
-	p.progressDialog.SetTitle("pod stop in progress")
+	p.progressDialog.SetTitle(i18n.T("pod stop in progress"))
 	p.progressDialog.Display()
 
 	stop := func(id string) {
@@ -314,7 +315,7 @@ func (p *Pods) stop() {
 		p.progressDialog.Hide()
 
 		if err != nil {
-			title := fmt.Sprintf("POD (%s) STOP ERROR", p.selectedID)
+			title := fmt.Sprintf(i18n.T("POD (%s) STOP ERROR"), p.selectedID)
 
 			p.displayError(title, err)
 			p.appFocusHandler()
@@ -335,7 +336,7 @@ func (p *Pods) top() {
 
 	data, err := ppods.Top(p.selectedID)
 	if err != nil {
-		title := fmt.Sprintf("POD (%s) TOP ERROR", p.selectedID)
+		title := fmt.Sprintf(i18n.T("POD (%s) TOP ERROR"), p.selectedID)
 		p.displayError(title, err)
 
 		return
@@ -353,7 +354,7 @@ func (p *Pods) unpause() {
 		return
 	}
 
-	p.progressDialog.SetTitle("pod unpause in progress")
+	p.progressDialog.SetTitle(i18n.T("pod unpause in progress"))
 	p.progressDialog.Display()
 
 	unpause := func(id string) {
@@ -362,7 +363,7 @@ func (p *Pods) unpause() {
 		p.progressDialog.Hide()
 
 		if err != nil {
-			title := fmt.Sprintf("POD (%s) UNPAUSE ERROR", p.selectedID)
+			title := fmt.Sprintf(i18n.T("POD (%s) UNPAUSE ERROR"), p.selectedID)
 
 			p.displayError(title, err)
 			p.appFocusHandler()

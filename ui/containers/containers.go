@@ -6,6 +6,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/ui/containers/cntdialogs"
 	"github.com/containers/podman-tui/ui/containers/cntdialogs/vterm"
 	"github.com/containers/podman-tui/ui/dialogs"
@@ -46,6 +47,84 @@ var (
 	errNoContainerTop          = errors.New("there is no container to display top")
 	errEmptyContainerImageName = errors.New("empty container image name")
 )
+
+// getTranslatedError returns the translated error message
+func getTranslatedError(err error) string {
+	switch err {
+	case errNoContainerAttach:
+		return i18n.T("there is no container to attach")
+	case errNoContainerHealthCheck:
+		return i18n.T("there is no container to perform healthcheck")
+	case errNoContainerCommit:
+		return i18n.T("there is no container to commit")
+	case errNoContainerStat:
+		return i18n.T("there is no container to display stats")
+	case errNoContainerCheckpoint:
+		return i18n.T("there is no container to perform checkpoint")
+	case errNoContainerExec:
+		return i18n.T("there is no container to perform exec")
+	case errNoContainerDiff:
+		return i18n.T("there is no container to display diff")
+	case errNoContainerInspect:
+		return i18n.T("there is no container to inspect")
+	case errNoContainerKill:
+		return i18n.T("there is no container to kill")
+	case errNoContainerLogs:
+		return i18n.T("there is no container to display logs")
+	case errNoContainerPause:
+		return i18n.T("there is no container to pause")
+	case errNoContainerUnpause:
+		return i18n.T("there is no container to unpause")
+	case errNoContainerPorts:
+		return i18n.T("there is no container to display ports")
+	case errNoContainerRename:
+		return i18n.T("there is no container to rename")
+	case errNoContainerRemove:
+		return i18n.T("there is no container to remove")
+	case errNoContainerStart:
+		return i18n.T("there is no container to start")
+	case errNoContainerStop:
+		return i18n.T("there is no container to stop")
+	case errNoContainerTop:
+		return i18n.T("there is no container to display top")
+	case errEmptyContainerImageName:
+		return i18n.T("empty container image name")
+	default:
+		// Keep Podman's dynamic error messages as-is (no translation)
+		return err.Error()
+	}
+}
+
+// translateErrorTitle translates error title like "CONTAINER (id) ACTION ERROR"
+func translateErrorTitle(title string) string {
+	if title == "" {
+		return ""
+	}
+
+	// Check if title contains a container ID in format "CONTAINER (id) ... ERROR"
+	if strings.HasPrefix(title, "CONTAINER (") && strings.Contains(title, ") ") {
+		// Extract the container ID
+		idStart := len("CONTAINER (")
+		idEnd := strings.Index(title, ") ")
+		if idEnd > idStart {
+			containerID := title[idStart:idEnd]
+			// Get the error action part (after ") ")
+			actionPart := title[idEnd+2:]
+			
+			// Build the template key: "CONTAINER (%s) ACTION ERROR"
+			templateKey := fmt.Sprintf("CONTAINER (%%s) %s", actionPart)
+			
+			// Translate the template
+			translatedTemplate := i18n.T(templateKey)
+			
+			// Format with the actual container ID
+			return fmt.Sprintf(translatedTemplate, containerID)
+		}
+	}
+	
+	// For titles without container ID, translate directly
+	return i18n.T(title)
+}
 
 // Containers implements the containers page primitive.
 type Containers struct {
@@ -90,7 +169,7 @@ func NewContainers() *Containers {
 	containers := &Containers{
 		Box:              tview.NewBox(),
 		title:            "containers",
-		headers:          []string{"container id", "image", "pod", "created", "status", "names", "ports"},
+		headers:          []string{i18n.T("container id"), i18n.T("image"), i18n.T("pod"), i18n.T("created"), i18n.T("status"), i18n.T("names"), i18n.T("ports")},
 		errorDialog:      dialogs.NewErrorDialog(),
 		cmdInputDialog:   dialogs.NewSimpleInputDialog(""),
 		messageDialog:    dialogs.NewMessageDialog(""),
@@ -109,32 +188,10 @@ func NewContainers() *Containers {
 		containersList:   containerListReport{sortBy: "created", ascending: true},
 	}
 
-	containers.topDialog.SetTitle("podman container top")
+	containers.topDialog.SetTitle(i18n.T("podman container top"))
 
-	containers.cmdDialog = dialogs.NewCommandDialog([][]string{
-		{"attach", "attach to a running container"},
-		{"checkpoint", "checkpoints a running container"},
-		{"commit", "create an image from a container's changes"},
-		{"create", "create a new container but do not start"},
-		{"diff", "inspect changes to the selected container's file systems"},
-		{"exec", "execute the specified command inside a running container"},
-		{"healthcheck", "run the health check of a container"},
-		{"inspect", "display the configuration of a container"},
-		{"kill", "kill the selected running container with a SIGKILL signal"},
-		{"logs", "fetch the logs of the selected container"},
-		{"pause", "pause all the processes in the selected container"},
-		{"port", "list port mappings for the selected container"},
-		{"prune", "remove all non running containers"},
-		{"rename", "rename the selected container"},
-		{"restore", "restores a container from a checkpoint"},
-		{"rm", "remove the selected container"},
-		{"run", "runs a command in a new container from the given image"},
-		{"start", "start the selected containers"},
-		{"stats", "display container resource usage statistics"},
-		{"stop", "stop the selected containers"},
-		{"top", "display the running processes of the selected container"},
-		{"unpause", "unpause the selected container that was paused before"},
-	})
+	// Build command dialog with translations
+	containers.buildCommandDialog()
 
 	containers.table = tview.NewTable()
 	containers.table.SetTitle(fmt.Sprintf("[::b]%s[0]", strings.ToUpper(containers.title)))
@@ -157,11 +214,7 @@ func NewContainers() *Containers {
 	containers.table.SetSelectable(true, false)
 
 	// set command dialog functions
-	containers.cmdDialog.SetSelectedFunc(func() {
-		containers.cmdDialog.Hide()
-		containers.runCommand(containers.cmdDialog.GetSelectedItem())
-	})
-	containers.cmdDialog.SetCancelFunc(containers.cmdDialog.Hide)
+	// NOTE: cmdDialog handlers (SetSelectedFunc, SetCancelFunc) are set in buildCommandDialog()
 
 	// set input cmd dialog functions
 	containers.cmdInputDialog.SetCancelFunc(containers.cmdInputDialog.Hide)
@@ -524,4 +577,128 @@ func (cnt *Containers) getSelectedItem() (string, string) {
 	cntName = cnt.table.GetCell(row, viewContainersNamesColIndex).Text
 
 	return cntID, cntName
+}
+
+// buildCommandDialog builds the command dialog with translated strings
+func (cnt *Containers) buildCommandDialog() {
+	if cnt.cmdDialog != nil {
+		cnt.cmdDialog.Hide()
+	}
+
+	// Translate both command names and descriptions
+	cnt.cmdDialog = dialogs.NewCommandDialog([][]string{
+		{i18n.T("attach"), i18n.T("attach to a running container")},
+		{i18n.T("checkpoint"), i18n.T("checkpoints a running container")},
+		{i18n.T("commit"), i18n.T("create an image from a container's changes")},
+		{i18n.T("create"), i18n.T("create a new container but do not start")},
+		{i18n.T("diff"), i18n.T("inspect changes to the selected container's file systems")},
+		{i18n.T("exec"), i18n.T("execute the specified command inside a running container")},
+		{i18n.T("healthcheck"), i18n.T("run the health check of a container")},
+		{i18n.T("inspect"), i18n.T("display the configuration of a container")},
+		{i18n.T("kill"), i18n.T("kill the selected running container with a SIGKILL signal")},
+		{i18n.T("logs"), i18n.T("fetch the logs of the selected container")},
+		{i18n.T("pause"), i18n.T("pause all the processes in the selected container")},
+		{i18n.T("port"), i18n.T("list port mappings for the selected container")},
+		{i18n.T("prune"), i18n.T("remove all non running containers")},
+		{i18n.T("rename"), i18n.T("rename the selected container")},
+		{i18n.T("restore"), i18n.T("restores a container from a checkpoint")},
+		{i18n.T("rm"), i18n.T("remove the selected container")},
+		{i18n.T("run"), i18n.T("runs a command in a new container from the given image")},
+		{i18n.T("start"), i18n.T("start the selected containers")},
+		{i18n.T("stats"), i18n.T("display container resource usage statistics")},
+		{i18n.T("stop"), i18n.T("stop the selected containers")},
+		{i18n.T("top"), i18n.T("display the running processes of the selected container")},
+		{i18n.T("unpause"), i18n.T("unpause the selected container that was paused before")},
+	})
+
+	cnt.cmdDialog.SetSelectedFunc(func() {
+		cnt.cmdDialog.Hide()
+		// GetSelectedItem returns translated command, map it back to English
+		translatedCmd := cnt.cmdDialog.GetSelectedItem()
+		englishCmd := cnt.getEnglishCommand(translatedCmd)
+		cnt.runCommand(englishCmd)
+	})
+
+	cnt.cmdDialog.SetCancelFunc(cnt.cmdDialog.Hide)
+}
+
+// getEnglishCommand maps translated command back to English command key
+func (cnt *Containers) getEnglishCommand(translatedCmd string) string {
+	// Create reverse mapping from translated to English
+	commandMap := map[string]string{
+		i18n.T("attach"):      "attach",
+		i18n.T("checkpoint"):  "checkpoint",
+		i18n.T("commit"):      "commit",
+		i18n.T("create"):      "create",
+		i18n.T("diff"):        "diff",
+		i18n.T("exec"):        "exec",
+		i18n.T("healthcheck"): "healthcheck",
+		i18n.T("inspect"):     "inspect",
+		i18n.T("kill"):        "kill",
+		i18n.T("logs"):        "logs",
+		i18n.T("pause"):       "pause",
+		i18n.T("port"):        "port",
+		i18n.T("prune"):       "prune",
+		i18n.T("rename"):      "rename",
+		i18n.T("restore"):     "restore",
+		i18n.T("rm"):          "rm",
+		i18n.T("run"):         "run",
+		i18n.T("start"):       "start",
+		i18n.T("stats"):       "stats",
+		i18n.T("stop"):        "stop",
+		i18n.T("top"):         "top",
+		i18n.T("unpause"):     "unpause",
+	}
+
+	if englishCmd, exists := commandMap[translatedCmd]; exists {
+		return englishCmd
+	}
+
+	// Fallback to original if not found (for English or unknown commands)
+	return translatedCmd
+}
+
+// UpdateLanguage updates all translatable text when language changes
+func (cnt *Containers) UpdateLanguage() {
+	// DO NOT update cnt.title - it's used as page key in app.pages
+	// Only update headers which are displayed
+	cnt.headers = []string{
+		i18n.T("container id"),
+		i18n.T("image"),
+		i18n.T("pod"),
+		i18n.T("created"),
+		i18n.T("status"),
+		i18n.T("names"),
+		i18n.T("ports"),
+	}
+
+	// Rebuild command dialog with new translations
+	cnt.buildCommandDialog()
+
+	// Update table header cells
+	for i := range cnt.headers {
+		header := fmt.Sprintf("[black::b]%s", strings.ToUpper(cnt.headers[i])) //nolint:perfsprint
+		cnt.table.GetCell(0, i).SetText(header)
+	}
+
+	// Update table title with translation
+	translatedTitle := i18n.T(cnt.title)
+	cnt.table.SetTitle(fmt.Sprintf("[::b]%s[%d]", strings.ToUpper(translatedTitle), cnt.table.GetRowCount()-1))
+
+	// Update dialogs
+	cnt.checkpointDialog.UpdateLanguage()
+	cnt.commitDialog.UpdateLanguage()
+	cnt.createDialog.UpdateLanguage()
+	cnt.runDialog.UpdateLanguage()
+	cnt.execDialog.UpdateLanguage()
+	cnt.statsDialog.UpdateLanguage()
+	cnt.terminalDialog.UpdateLanguage()
+	cnt.topDialog.UpdateLanguage()
+	cnt.messageDialog.UpdateLanguage()
+	cnt.confirmDialog.UpdateLanguage()
+	cnt.cmdInputDialog.UpdateLanguage()
+	cnt.restoreDialog.UpdateLanguage()
+
+	// Rebuild error dialog to update OK button
+	cnt.errorDialog = dialogs.NewErrorDialog()
 }

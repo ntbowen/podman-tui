@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/ui/style"
 	"github.com/docker/go-units"
 	"github.com/rivo/tview"
@@ -30,14 +31,16 @@ func (s *Secrets) refresh(_ int) {
 	rowIndex := 1
 	secResponse := s.getData()
 
-	s.table.SetTitle(fmt.Sprintf("[::b]%s[%d]", strings.ToUpper(s.title), len(secResponse)))
+	s.table.SetTitle(fmt.Sprintf("[::b]%s[%d]", strings.ToUpper(i18n.T(s.title)), len(secResponse)))
 
 	for i := range secResponse {
 		secID := secResponse[i].ID
 		secName := secResponse[i].Spec.Name
 		secDriver := secResponse[i].Spec.Driver.Name
-		secCreated := units.HumanDuration(time.Since(secResponse[i].CreatedAt)) + " ago"
-		secUpdated := units.HumanDuration(time.Since(secResponse[i].UpdatedAt)) + " ago"
+		duration := units.HumanDuration(time.Since(secResponse[i].CreatedAt))
+		secCreated := i18n.TranslateTime(duration) + " " + i18n.T("ago")
+		duration = units.HumanDuration(time.Since(secResponse[i].UpdatedAt))
+		secUpdated := i18n.TranslateTime(duration) + " " + i18n.T("ago")
 
 		// ID column
 		s.table.SetCell(rowIndex, viewSecretsIDColIndex,

@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/containers/common/libnetwork/types"
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/ui/dialogs"
 	"github.com/containers/podman-tui/ui/networks/netdialogs"
 	"github.com/containers/podman-tui/ui/style"
@@ -61,7 +62,7 @@ func NewNetworks() *Networks {
 	nets := &Networks{
 		Box:              tview.NewBox(),
 		title:            "networks",
-		headers:          []string{"id", "name", "driver"},
+		headers:          []string{i18n.T("id"), i18n.T("name"), i18n.T("driver")},
 		errorDialog:      dialogs.NewErrorDialog(),
 		progressDialog:   dialogs.NewProgressDialog(),
 		confirmDialog:    dialogs.NewConfirmDialog(),
@@ -73,18 +74,11 @@ func NewNetworks() *Networks {
 		networkList:      networkListReport{sortBy: "name", ascending: true},
 	}
 
-	nets.cmdDialog = dialogs.NewCommandDialog([][]string{
-		{"connect", "connect a container to a network"},
-		{"create", "create a Podman CNI network"},
-		{"disconnect", "disconnect a container from a network"},
-		{"inspect", "displays the raw CNI network configuration"},
-		{"prune", "remove all unused networks"},
-		// {"reload", "reload the network for containers"},
-		{"rm", "remove a CNI networks"},
-	})
+	// Build command dialog with translations
+	nets.buildCommandDialog()
 
 	nets.table = tview.NewTable()
-	nets.table.SetTitle(fmt.Sprintf("[::b]%s[0]", strings.ToUpper(nets.title)))
+	nets.table.SetTitle(fmt.Sprintf("[::b]%s[0]", strings.ToUpper(i18n.T(nets.title))))
 	nets.table.SetBorderColor(style.BorderColor)
 	nets.table.SetBackgroundColor(style.BgColor)
 	nets.table.SetTitleColor(style.FgColor)
@@ -252,4 +246,85 @@ func (nets *Networks) getInnerDialogs() []utils.UIDialog {
 	}
 
 	return dialogs
+}
+
+// buildCommandDialog builds the command dialog with translated strings
+func (nets *Networks) buildCommandDialog() {
+	if nets.cmdDialog != nil {
+		nets.cmdDialog.Hide()
+	}
+
+	// Translate both command names and descriptions
+	nets.cmdDialog = dialogs.NewCommandDialog([][]string{
+		{i18n.T("connect"), i18n.T("connect a container to a network")},
+		{i18n.T("create"), i18n.T("create a Podman CNI network")},
+		{i18n.T("disconnect"), i18n.T("disconnect a container from a network")},
+		{i18n.T("inspect"), i18n.T("displays the raw CNI network configuration")},
+		{i18n.T("prune"), i18n.T("remove all unused networks")},
+		{i18n.T("rm"), i18n.T("remove a CNI networks")},
+	})
+
+	nets.cmdDialog.SetSelectedFunc(func() {
+		nets.cmdDialog.Hide()
+		// GetSelectedItem returns translated command, map it back to English
+		translatedCmd := nets.cmdDialog.GetSelectedItem()
+		englishCmd := nets.getEnglishCommand(translatedCmd)
+		nets.runCommand(englishCmd)
+	})
+
+	nets.cmdDialog.SetCancelFunc(func() {
+		nets.cmdDialog.Hide()
+	})
+}
+
+// getEnglishCommand maps translated command back to English command key
+func (nets *Networks) getEnglishCommand(translatedCmd string) string {
+	// Create reverse mapping from translated to English
+	commandMap := map[string]string{
+		i18n.T("connect"):    "connect",
+		i18n.T("create"):     "create",
+		i18n.T("disconnect"): "disconnect",
+		i18n.T("inspect"):    "inspect",
+		i18n.T("prune"):      "prune",
+		i18n.T("rm"):         "rm",
+	}
+
+	if englishCmd, ok := commandMap[translatedCmd]; ok {
+		return englishCmd
+	}
+
+	// Fallback to original if not found (shouldn't happen)
+	return translatedCmd
+}
+
+// UpdateLanguage updates all translatable text when language changes.
+func (nets *Networks) UpdateLanguage() {
+	// Update headers
+	nets.headers = []string{i18n.T("id"), i18n.T("name"), i18n.T("driver")}
+	
+	// Update table header cells
+	for i := range nets.headers {
+		header := fmt.Sprintf("[::b]%s", strings.ToUpper(nets.headers[i]))
+		nets.table.GetCell(0, i).SetText(header)
+	}
+	
+	// Update table title with translation
+	translatedTitle := i18n.T(nets.title)
+	nets.table.SetTitle(fmt.Sprintf("[::b]%s[%d]", strings.ToUpper(translatedTitle), nets.table.GetRowCount()-1))
+	
+	// Rebuild command dialog with new translations
+	nets.buildCommandDialog()
+	
+	// Update dialogs
+	nets.messageDialog.UpdateLanguage()
+	nets.confirmDialog.UpdateLanguage()
+	nets.errorDialog.UpdateLanguage()
+	nets.connectDialog.UpdateLanguage()
+	nets.disconnectDialog.UpdateLanguage()
+	nets.createDialog.UpdateLanguage()
+	
+	// Rebuild sort dialog with translated headers
+	nets.sortDialog = dialogs.NewSortDialog([]string{i18n.T("name"), i18n.T("driver")}, 0)
+	nets.sortDialog.SetCancelFunc(nets.sortDialog.Hide)
+	nets.sortDialog.SetSelectFunc(nets.SortView)
 }

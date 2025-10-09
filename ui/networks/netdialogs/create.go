@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/pdcs/networks"
 	"github.com/containers/podman-tui/ui/dialogs"
 	"github.com/containers/podman-tui/ui/style"
@@ -77,7 +78,7 @@ func NewNetworkCreateDialog() *NetworkCreateDialog {
 		basicInfoPage:             tview.NewFlex(),
 		ipSettingsPage:            tview.NewFlex(),
 		form:                      tview.NewForm(),
-		categoryLabels:            []string{"Basic Information", "IP Settings"},
+		categoryLabels:            []string{i18n.T("Basic Information"), i18n.T("IP Settings")},
 		activePageIndex:           0,
 		display:                   false,
 		networkNameField:          tview.NewInputField(),
@@ -108,18 +109,18 @@ func NewNetworkCreateDialog() *NetworkCreateDialog {
 
 	// name field
 	netDialog.networkNameField.SetBackgroundColor(bgColor)
-	netDialog.networkNameField.SetLabel(utils.StringToInputLabel("name:", basicInfoPageLabelWidth))
+	netDialog.networkNameField.SetLabel(utils.StringToInputLabel(i18n.T("name:"), basicInfoPageLabelWidth))
 	netDialog.networkNameField.SetFieldStyle(style.InputFieldStyle)
 	netDialog.networkNameField.SetLabelStyle(style.InputLabelStyle)
 
 	// labels field
 	netDialog.networkLabelsField.SetBackgroundColor(bgColor)
-	netDialog.networkLabelsField.SetLabel(utils.StringToInputLabel("labels:", basicInfoPageLabelWidth))
+	netDialog.networkLabelsField.SetLabel(utils.StringToInputLabel(i18n.T("labels:"), basicInfoPageLabelWidth))
 	netDialog.networkLabelsField.SetFieldStyle(style.InputFieldStyle)
 	netDialog.networkLabelsField.SetLabelStyle(style.InputLabelStyle)
 
 	// internal check box
-	netDialog.networkInternalCheckBox.SetLabel("internal")
+	netDialog.networkInternalCheckBox.SetLabel(i18n.T("internal"))
 	netDialog.networkInternalCheckBox.SetLabelWidth(basicInfoPageLabelWidth)
 	netDialog.networkInternalCheckBox.SetChecked(false)
 	netDialog.networkInternalCheckBox.SetBackgroundColor(bgColor)
@@ -128,20 +129,20 @@ func NewNetworkCreateDialog() *NetworkCreateDialog {
 
 	// drivers
 	netDialog.networkDriverField.SetBackgroundColor(bgColor)
-	netDialog.networkDriverField.SetLabel(utils.StringToInputLabel("drivers:", basicInfoPageLabelWidth))
+	netDialog.networkDriverField.SetLabel(utils.StringToInputLabel(i18n.T("drivers:"), basicInfoPageLabelWidth))
 	netDialog.networkDriverField.SetFieldStyle(style.InputFieldStyle)
 	netDialog.networkDriverField.SetLabelStyle(style.InputLabelStyle)
 
 	// drivers options
 	netDialog.networkDriverOptionsField.SetBackgroundColor(bgColor)
-	netDialog.networkDriverOptionsField.SetLabel(utils.StringToInputLabel("options:", basicInfoPageLabelWidth))
+	netDialog.networkDriverOptionsField.SetLabel(utils.StringToInputLabel(i18n.T("options:"), basicInfoPageLabelWidth))
 	netDialog.networkDriverOptionsField.SetFieldStyle(style.InputFieldStyle)
 	netDialog.networkDriverOptionsField.SetLabelStyle(style.InputLabelStyle)
 
 	// ip settings page
 	ipSettingsPageLabelWidth := 12
 	// ipv6 check box
-	netDialog.networkIpv6CheckBox.SetLabel("ipv6")
+	netDialog.networkIpv6CheckBox.SetLabel(i18n.T("ipv6"))
 	netDialog.networkIpv6CheckBox.SetLabelWidth(ipSettingsPageLabelWidth)
 	netDialog.networkIpv6CheckBox.SetChecked(false)
 	netDialog.networkIpv6CheckBox.SetBackgroundColor(bgColor)
@@ -150,24 +151,24 @@ func NewNetworkCreateDialog() *NetworkCreateDialog {
 
 	// gateway
 	netDialog.networkGatewayField.SetBackgroundColor(bgColor)
-	netDialog.networkGatewayField.SetLabel(utils.StringToInputLabel("gateway:", basicInfoPageLabelWidth))
+	netDialog.networkGatewayField.SetLabel(utils.StringToInputLabel(i18n.T("gateway:"), basicInfoPageLabelWidth))
 	netDialog.networkGatewayField.SetFieldStyle(style.InputFieldStyle)
 	netDialog.networkGatewayField.SetLabelStyle(style.InputLabelStyle)
 
 	// ip range
 	netDialog.networkIPRangeField.SetBackgroundColor(bgColor)
-	netDialog.networkIPRangeField.SetLabel(utils.StringToInputLabel("ip range:", basicInfoPageLabelWidth))
+	netDialog.networkIPRangeField.SetLabel(utils.StringToInputLabel(i18n.T("ip range:"), basicInfoPageLabelWidth))
 	netDialog.networkIPRangeField.SetFieldStyle(style.InputFieldStyle)
 	netDialog.networkIPRangeField.SetLabelStyle(style.InputLabelStyle)
 
 	// subnet
 	netDialog.networkSubnetField.SetBackgroundColor(bgColor)
-	netDialog.networkSubnetField.SetLabel(utils.StringToInputLabel("subnet:", basicInfoPageLabelWidth))
+	netDialog.networkSubnetField.SetLabel(utils.StringToInputLabel(i18n.T("subnet:"), basicInfoPageLabelWidth))
 	netDialog.networkSubnetField.SetFieldStyle(style.InputFieldStyle)
 	netDialog.networkSubnetField.SetLabelStyle(style.InputLabelStyle)
 
 	// dns check box
-	netDialog.networkDisableDNSCheckBox.SetLabel("disable DNS")
+	netDialog.networkDisableDNSCheckBox.SetLabel(i18n.T("disable DNS"))
 	netDialog.networkDisableDNSCheckBox.SetLabelWidth(basicInfoPageLabelWidth)
 	netDialog.networkDisableDNSCheckBox.SetChecked(false)
 	netDialog.networkDisableDNSCheckBox.SetBackgroundColor(bgColor)
@@ -181,8 +182,8 @@ func NewNetworkCreateDialog() *NetworkCreateDialog {
 
 	// form
 	netDialog.form.SetBackgroundColor(bgColor)
-	netDialog.form.AddButton("Cancel", nil)
-	netDialog.form.AddButton("Create", nil)
+	netDialog.form.AddButton(i18n.T("Cancel"), nil)
+	netDialog.form.AddButton(i18n.T("Create"), nil)
 	netDialog.form.SetButtonsAlign(tview.AlignRight)
 	netDialog.form.SetButtonBackgroundColor(buttonBgColor)
 
@@ -190,7 +191,7 @@ func NewNetworkCreateDialog() *NetworkCreateDialog {
 	netDialog.layout.SetBackgroundColor(bgColor)
 	netDialog.layout.SetBorder(true)
 	netDialog.layout.SetBorderColor(style.DialogBorderColor)
-	netDialog.layout.SetTitle("PODMAN NETWORK CREATE")
+	netDialog.layout.SetTitle(i18n.T("PODMAN NETWORK CREATE"))
 	netDialog.layout.AddItem(netDialog.form, dialogs.DialogFormHeight, 0, true)
 
 	netDialog.setActiveCategory(0)
@@ -643,4 +644,62 @@ func (d *NetworkCreateDialog) setIPSettingsPageNextFocus() {
 	}
 
 	d.focusElement = formFocus
+}
+
+// UpdateLanguage updates all translatable text in the dialog.
+func (d *NetworkCreateDialog) UpdateLanguage() {
+	// Update dialog title
+	d.layout.SetTitle(i18n.T("PODMAN NETWORK CREATE"))
+	
+	// Save old category labels before updating
+	oldCategoryLabels := make([]string, len(d.categoryLabels))
+	copy(oldCategoryLabels, d.categoryLabels)
+	
+	// Update category labels
+	d.categoryLabels = []string{i18n.T("Basic Information"), i18n.T("IP Settings")}
+	
+	// Update Basic Information page labels
+	basicInfoPageLabelWidth := 12
+	d.networkNameField.SetLabel(utils.StringToInputLabel(i18n.T("name:"), basicInfoPageLabelWidth))
+	d.networkLabelsField.SetLabel(utils.StringToInputLabel(i18n.T("labels:"), basicInfoPageLabelWidth))
+	d.networkInternalCheckBox.SetLabel(i18n.T("internal"))
+	d.networkDriverField.SetLabel(utils.StringToInputLabel(i18n.T("drivers:"), basicInfoPageLabelWidth))
+	d.networkDriverOptionsField.SetLabel(utils.StringToInputLabel(i18n.T("options:"), basicInfoPageLabelWidth))
+	
+	// Update IP Settings page labels
+	ipSettingsPageLabelWidth := 12
+	d.networkIpv6CheckBox.SetLabel(i18n.T("ipv6"))
+	d.networkIpv6CheckBox.SetLabelWidth(ipSettingsPageLabelWidth)
+	d.networkGatewayField.SetLabel(utils.StringToInputLabel(i18n.T("gateway:"), basicInfoPageLabelWidth))
+	d.networkIPRangeField.SetLabel(utils.StringToInputLabel(i18n.T("ip range:"), basicInfoPageLabelWidth))
+	d.networkSubnetField.SetLabel(utils.StringToInputLabel(i18n.T("subnet:"), basicInfoPageLabelWidth))
+	d.networkDisableDNSCheckBox.SetLabel(i18n.T("disable DNS"))
+	d.networkDisableDNSCheckBox.SetLabelWidth(basicInfoPageLabelWidth)
+	
+	// Update form buttons
+	d.form.ClearButtons()
+	d.form.AddButton(i18n.T("Cancel"), nil)
+	d.form.AddButton(i18n.T("Create"), nil)
+	
+	// Re-set button handlers
+	if d.cancelHandler != nil {
+		cancelButton := d.form.GetButton(d.form.GetButtonCount() - 2) //nolint:mnd
+		cancelButton.SetSelectedFunc(d.cancelHandler)
+	}
+	
+	if d.createHandler != nil {
+		createButton := d.form.GetButton(d.form.GetButtonCount() - 1)
+		createButton.SetSelectedFunc(d.createHandler)
+	}
+	
+	// Rebuild category pages with new labels
+	// Remove old pages
+	d.categoryPages.RemovePage(oldCategoryLabels[basicInfoPageIndex])
+	d.categoryPages.RemovePage(oldCategoryLabels[ipSettingsPageIndex])
+	// Add pages with new labels
+	d.categoryPages.AddPage(d.categoryLabels[basicInfoPageIndex], d.basicInfoPage, true, true)
+	d.categoryPages.AddPage(d.categoryLabels[ipSettingsPageIndex], d.ipSettingsPage, true, true)
+	
+	// Refresh categories display
+	d.setActiveCategory(d.activePageIndex)
 }

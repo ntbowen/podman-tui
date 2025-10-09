@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/ui/dialogs"
 	"github.com/containers/podman-tui/ui/style"
 	"github.com/containers/podman-tui/ui/utils"
@@ -65,7 +66,7 @@ func NewImageSearchDialog() *ImageSearchDialog {
 	dialog := &ImageSearchDialog{
 		Box:          tview.NewBox(),
 		input:        tview.NewInputField(),
-		searchButton: tview.NewButton("Search"),
+		searchButton: tview.NewButton(i18n.T("Search")),
 		searchResult: tview.NewTable(),
 		display:      false,
 		focusElement: sInputElement,
@@ -77,10 +78,10 @@ func NewImageSearchDialog() *ImageSearchDialog {
 	dialog.searchButton.SetStyle(tcell.StyleDefault.Background(buttonBgColor))
 	dialog.searchButton.SetLabelColorActivated(buttonBgColor)
 
-	searchLabel := "search term:"
+	searchLabel := i18n.T("search term:")
 
 	dialog.input.SetBackgroundColor(bgColor)
-	dialog.input.SetLabel(utils.StringToInputLabel(searchLabel, len(searchLabel)+1))
+	dialog.input.SetLabel(utils.StringToInputLabel(searchLabel, i18n.GetDisplayWidth(searchLabel)+1))
 	dialog.input.SetLabelStyle(style.InputLabelStyle)
 	dialog.input.SetFieldStyle(style.InputFieldStyle)
 	dialog.input.SetFieldWidth(searchFieldMaxSize)
@@ -107,8 +108,8 @@ func NewImageSearchDialog() *ImageSearchDialog {
 	dialog.initTable()
 
 	dialog.form = tview.NewForm().
-		AddButton("Cancel", nil).
-		AddButton("Pull", nil).
+		AddButton(i18n.T("Cancel"), nil).
+		AddButton(i18n.T("Pull"), nil).
 		SetButtonsAlign(tview.AlignRight)
 	dialog.form.SetBackgroundColor(bgColor)
 	dialog.form.SetButtonBackgroundColor(buttonBgColor)
@@ -117,7 +118,7 @@ func NewImageSearchDialog() *ImageSearchDialog {
 	dialog.layout.SetBorder(true)
 	dialog.layout.SetBorderColor(style.DialogBorderColor)
 	dialog.layout.SetBackgroundColor(bgColor)
-	dialog.layout.SetTitle("PODMAN IMAGE SEARCH/PULL")
+	dialog.layout.SetTitle(i18n.T("PODMAN IMAGE SEARCH/PULL"))
 	dialog.layout.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, true)
 	dialog.layout.AddItem(dialog.searchLayout, 1, 0, true)
 	dialog.layout.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, true)
@@ -457,7 +458,7 @@ func (d *ImageSearchDialog) initTable() {
 
 	d.searchResult.Clear()
 	d.searchResult.SetCell(0, searchResultIndexColIndex,
-		tview.NewTableCell(fmt.Sprintf("[%s::b]INDEX", style.GetColorHex(fgColor))).
+		tview.NewTableCell(fmt.Sprintf("[%s::b]%s", style.GetColorHex(fgColor), strings.ToUpper(i18n.T("INDEX")))).
 			SetExpansion(1).
 			SetBackgroundColor(bgColor).
 			SetTextColor(fgColor).
@@ -465,7 +466,7 @@ func (d *ImageSearchDialog) initTable() {
 			SetSelectable(false))
 
 	d.searchResult.SetCell(0, searchResultNameColIndex,
-		tview.NewTableCell(fmt.Sprintf("[%s::b]NAME", style.GetColorHex(fgColor))).
+		tview.NewTableCell(fmt.Sprintf("[%s::b]%s", style.GetColorHex(fgColor), strings.ToUpper(i18n.T("NAME")))).
 			SetExpansion(1).
 			SetBackgroundColor(bgColor).
 			SetTextColor(fgColor).
@@ -473,7 +474,7 @@ func (d *ImageSearchDialog) initTable() {
 			SetSelectable(false))
 
 	d.searchResult.SetCell(0, searchResultStarsColIndex,
-		tview.NewTableCell(fmt.Sprintf("[%s::b]STARS", style.GetColorHex(fgColor))).
+		tview.NewTableCell(fmt.Sprintf("[%s::b]%s", style.GetColorHex(fgColor), strings.ToUpper(i18n.T("STARS")))).
 			SetExpansion(1).
 			SetBackgroundColor(bgColor).
 			SetTextColor(fgColor).
@@ -481,14 +482,14 @@ func (d *ImageSearchDialog) initTable() {
 			SetSelectable(false))
 
 	d.searchResult.SetCell(0, searchResultOfficialColIndex,
-		tview.NewTableCell(fmt.Sprintf("[%s::b]OFFICIAL", style.GetColorHex(fgColor))).
+		tview.NewTableCell(fmt.Sprintf("[%s::b]%s", style.GetColorHex(fgColor), strings.ToUpper(i18n.T("OFFICIAL")))).
 			SetExpansion(1).
 			SetBackgroundColor(bgColor).
 			SetTextColor(fgColor).
 			SetAlign(tview.AlignCenter).
 			SetSelectable(false))
 	d.searchResult.SetCell(0, searchResultAutomatedColIndex,
-		tview.NewTableCell(fmt.Sprintf("[%s::b]AUTOMATED", style.GetColorHex(fgColor))).
+		tview.NewTableCell(fmt.Sprintf("[%s::b]%s", style.GetColorHex(fgColor), strings.ToUpper(i18n.T("AUTOMATED")))).
 			SetExpansion(1).
 			SetBackgroundColor(bgColor).
 			SetTextColor(fgColor).
@@ -496,7 +497,7 @@ func (d *ImageSearchDialog) initTable() {
 			SetSelectable(false))
 
 	d.searchResult.SetCell(0, searchResultDescColIndex,
-		tview.NewTableCell(fmt.Sprintf("[%s::b]DESCRIPTION", style.GetColorHex(fgColor))).
+		tview.NewTableCell(fmt.Sprintf("[%s::b]%s", style.GetColorHex(fgColor), strings.ToUpper(i18n.T("DESCRIPTION")))).
 			SetExpansion(1).
 			SetBackgroundColor(bgColor).
 			SetTextColor(fgColor).
@@ -505,4 +506,41 @@ func (d *ImageSearchDialog) initTable() {
 
 	d.searchResult.SetFixed(1, 1)
 	d.searchResult.SetSelectable(true, false)
+}
+
+// UpdateLanguage updates all translatable text in the dialog.
+func (d *ImageSearchDialog) UpdateLanguage() {
+	// Update dialog title
+	d.layout.SetTitle(i18n.T("PODMAN IMAGE SEARCH/PULL"))
+	
+	// Update search term label
+	searchLabel := i18n.T("search term:")
+	d.input.SetLabel(utils.StringToInputLabel(searchLabel, i18n.GetDisplayWidth(searchLabel)+1))
+	
+	// Update search button
+	d.searchButton.SetLabel(i18n.T("Search"))
+	
+	// Update form buttons
+	d.form.ClearButtons()
+	d.form.AddButton(i18n.T("Cancel"), nil)
+	d.form.AddButton(i18n.T("Pull"), nil)
+	
+	// Re-set button handlers
+	if d.cancelHandler != nil {
+		cancelButton := d.form.GetButton(d.form.GetButtonCount() - 2) //nolint:mnd
+		cancelButton.SetSelectedFunc(d.cancelHandler)
+	}
+	
+	if d.pullSelectHandler != nil {
+		pullButton := d.form.GetButton(d.form.GetButtonCount() - 1)
+		pullButton.SetSelectedFunc(d.pullSelectHandler)
+	}
+	
+	// Reinitialize table headers
+	d.initTable()
+	
+	// Re-populate table data if exists
+	if len(d.result) > 0 {
+		d.UpdateResults(d.result)
+	}
 }

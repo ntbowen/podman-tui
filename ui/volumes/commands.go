@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/pdcs/volumes"
 	"github.com/containers/podman-tui/ui/dialogs"
 	"github.com/containers/podman-tui/ui/style"
@@ -29,9 +30,33 @@ func (vols *Volumes) runCommand(cmd string) {
 
 func (vols *Volumes) displayError(title string, err error) {
 	log.Error().Msgf("%s: %v", strings.ToLower(title), err)
-	vols.errorDialog.SetTitle(strings.ToUpper(title))
-	vols.errorDialog.SetText(fmt.Sprintf("%v", err))
+	// Translate title using translateErrorTitle
+	translatedTitle := translateErrorTitle(title)
+	vols.errorDialog.SetTitle(translatedTitle)
+	// Get translated error message (our predefined errors only, Podman errors kept as-is)
+	errorMsg := getTranslatedError(err)
+	vols.errorDialog.SetText(errorMsg)
 	vols.errorDialog.Display()
+}
+
+func translateErrorTitle(title string) string {
+	if title == "" {
+		return ""
+	}
+	return i18n.T(title)
+}
+
+func getTranslatedError(err error) string {
+	if err == nil {
+		return ""
+	}
+	// Check if it's our predefined error
+	errorMsg := err.Error()
+	if errors.Is(err, errNoVolume) {
+		return i18n.T(errorMsg)
+	}
+	// For other errors (Podman errors), return as-is
+	return errorMsg
 }
 
 func (vols *Volumes) create() {
@@ -44,7 +69,7 @@ func (vols *Volumes) create() {
 		return
 	}
 
-	vols.messageDialog.SetTitle("podman volume create")
+	vols.messageDialog.SetTitle(i18n.T("podman volume create"))
 	vols.messageDialog.SetText(dialogs.MessageVolumeInfo, createOpts.Name, report)
 	vols.messageDialog.Display()
 }
@@ -65,20 +90,20 @@ func (vols *Volumes) inspect() {
 		return
 	}
 
-	vols.messageDialog.SetTitle("podman volume inspect")
+	vols.messageDialog.SetTitle(i18n.T("podman volume inspect"))
 	vols.messageDialog.SetText(dialogs.MessageVolumeInfo, volID, data)
 	vols.messageDialog.Display()
 }
 
 func (vols *Volumes) prunePrep() {
-	vols.confirmDialog.SetTitle("podman volume prune")
+	vols.confirmDialog.SetTitle(i18n.T("podman volume prune"))
 	vols.confirmData = utils.PruneCommandLabel
-	vols.confirmDialog.SetText("Are you sure you want to remove all unused volumes ?")
+	vols.confirmDialog.SetText(i18n.T("Are you sure you want to remove all unused volumes ?"))
 	vols.confirmDialog.Display()
 }
 
 func (vols *Volumes) prune() {
-	vols.progressDialog.SetTitle("VOLUME prune in progress")
+	vols.progressDialog.SetTitle(i18n.T("VOLUME prune in progress"))
 	vols.progressDialog.Display()
 
 	prune := func() {
@@ -113,14 +138,14 @@ func (vols *Volumes) removePrep() {
 		return
 	}
 
-	vols.confirmDialog.SetTitle("podman pod rm")
+	vols.confirmDialog.SetTitle(i18n.T("podman volume rm"))
 
 	vols.confirmData = "rm"
 	bgColor := style.GetColorHex(style.DialogBorderColor)
 	fgColor := style.GetColorHex(style.DialogFgColor)
-	volumeItem := fmt.Sprintf("[%s:%s:b]VOLUME NAME:[:-:-] %s", fgColor, bgColor, volID)
-	description := fmt.Sprintf("%s\n\nAre you sure you want to remove the selected volume?", //nolint:perfsprint
-		volumeItem)
+	volumeItem := fmt.Sprintf("[%s:%s:b]%s[:-:-] %s", fgColor, bgColor, i18n.T("VOLUME NAME:"), volID)
+	description := fmt.Sprintf("%s\n\n%s", //nolint:perfsprint
+		volumeItem, i18n.T("Are you sure you want to remove the selected volume?"))
 
 	vols.confirmDialog.SetText(description)
 	vols.confirmDialog.Display()
@@ -134,7 +159,7 @@ func (vols *Volumes) remove() {
 		return
 	}
 
-	vols.progressDialog.SetTitle("volume remove in progress")
+	vols.progressDialog.SetTitle(i18n.T("volume remove in progress"))
 	vols.progressDialog.Display()
 
 	remove := func(name string) {

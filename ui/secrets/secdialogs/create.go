@@ -3,6 +3,7 @@ package secdialogs
 import (
 	"strings"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/pdcs/secrets"
 	"github.com/containers/podman-tui/ui/dialogs"
 	"github.com/containers/podman-tui/ui/style"
@@ -72,30 +73,30 @@ func NewSecretCreateDialog() *SecretCreateDialog {
 
 	// secret name field
 	createDialog.secretName.SetBackgroundColor(bgColor)
-	createDialog.secretName.SetLabel(utils.StringToInputLabel("name:", labelWidth))
+	createDialog.secretName.SetLabel(utils.StringToInputLabel(i18n.T("name:"), labelWidth))
 	createDialog.secretName.SetFieldStyle(style.InputFieldStyle)
 	createDialog.secretName.SetLabelStyle(style.InputLabelStyle)
 
 	// secret file field
 	createDialog.secretFile.SetBackgroundColor(bgColor)
-	createDialog.secretFile.SetLabel(utils.StringToInputLabel("secret file:", labelWidth))
+	createDialog.secretFile.SetLabel(utils.StringToInputLabel(i18n.T("secret file:"), labelWidth))
 	createDialog.secretFile.SetFieldStyle(style.InputFieldStyle)
 	createDialog.secretFile.SetLabelStyle(style.InputLabelStyle)
 
 	// secret text field
 	createDialog.secretText.SetBackgroundColor(bgColor)
-	createDialog.secretText.SetLabel(utils.StringToInputLabel("secret text:", labelWidth))
+	createDialog.secretText.SetLabel(utils.StringToInputLabel(i18n.T("secret text:"), labelWidth))
 	createDialog.secretText.SetFieldStyle(style.InputFieldStyle)
 	createDialog.secretText.SetLabelStyle(style.InputLabelStyle)
 
 	// secret labels field
 	createDialog.secretLabels.SetBackgroundColor(bgColor)
-	createDialog.secretLabels.SetLabel(utils.StringToInputLabel("labels:", labelWidth))
+	createDialog.secretLabels.SetLabel(utils.StringToInputLabel(i18n.T("labels:"), labelWidth))
 	createDialog.secretLabels.SetFieldStyle(style.InputFieldStyle)
 	createDialog.secretLabels.SetLabelStyle(style.InputLabelStyle)
 
 	// secret replace
-	replaceLabel := "replace "
+	replaceLabel := i18n.T("replace") + " "
 	createDialog.secretReplace.SetLabel(replaceLabel)
 	createDialog.secretReplace.SetChecked(false)
 	createDialog.secretReplace.SetBackgroundColor(bgColor)
@@ -105,9 +106,9 @@ func NewSecretCreateDialog() *SecretCreateDialog {
 	// secret driver
 	createDialog.secretDriver.SetBackgroundColor(bgColor)
 	createDialog.secretDriver.SetLabelColor(fgColor)
-	createDialog.secretDriver.SetLabel("driver:")
+	createDialog.secretDriver.SetLabel(i18n.T("driver:"))
 	createDialog.secretDriver.SetLabelWidth(labelWidth)
-	createDialog.secretDriver.SetOptions([]string{"file", "pass", "shell"}, nil)
+	createDialog.secretDriver.SetOptions([]string{i18n.T("file"), i18n.T("pass"), i18n.T("shell")}, nil)
 	createDialog.secretDriver.SetListStyles(ddUnselectedStyle, ddselectedStyle)
 	createDialog.secretDriver.SetFocusedStyle(style.DropDownFocused)
 	createDialog.secretDriver.SetCurrentOption(0)
@@ -115,13 +116,13 @@ func NewSecretCreateDialog() *SecretCreateDialog {
 
 	// secret driver options field
 	createDialog.secretDriverOptions.SetBackgroundColor(bgColor)
-	createDialog.secretDriverOptions.SetLabel("driver options: ")
+	createDialog.secretDriverOptions.SetLabel(i18n.T("driver options:") + " ")
 	createDialog.secretDriverOptions.SetFieldStyle(style.InputFieldStyle)
 	createDialog.secretDriverOptions.SetLabelStyle(style.InputLabelStyle)
 
 	// form
-	createDialog.form.AddButton("Cancel", nil)
-	createDialog.form.AddButton("Create", nil)
+	createDialog.form.AddButton(i18n.T("Cancel"), nil)
+	createDialog.form.AddButton(i18n.T("Create"), nil)
 	createDialog.form.SetButtonsAlign(tview.AlignRight)
 	createDialog.form.SetBackgroundColor(bgColor)
 	createDialog.form.SetButtonBackgroundColor(style.ButtonBgColor)
@@ -156,7 +157,7 @@ func NewSecretCreateDialog() *SecretCreateDialog {
 	createDialog.layout.SetBackgroundColor(bgColor)
 	createDialog.layout.SetBorder(true)
 	createDialog.layout.SetBorderColor(style.DialogBorderColor)
-	createDialog.layout.SetTitle("PODMAN SECRET CREATE")
+	createDialog.layout.SetTitle(i18n.T("PODMAN SECRET CREATE"))
 	createDialog.layout.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
 	createDialog.layout.AddItem(optionsLayout, 0, 1, true)
 	createDialog.layout.AddItem(utils.EmptyBoxSpace(bgColor), 1, 0, false)
@@ -389,10 +390,27 @@ func (d *SecretCreateDialog) GetCreateOptions() *secrets.SecretCreateOptions {
 	createOptions.Text = strings.TrimSpace(d.secretText.GetText())
 	createOptions.Labels = strings.Split(strings.TrimSpace(d.secretLabels.GetText()), " ")
 	createOptions.Replace = d.secretReplace.IsChecked()
-	_, createOptions.Driver = d.secretDriver.GetCurrentOption()
+	_, translatedDriver := d.secretDriver.GetCurrentOption()
+	createOptions.Driver = d.getEnglishDriver(translatedDriver)
 	createOptions.DriverOptions = strings.Split(strings.TrimSpace(d.secretDriverOptions.GetText()), " ")
 
 	return &createOptions
+}
+
+// getEnglishDriver maps translated driver name back to English
+func (d *SecretCreateDialog) getEnglishDriver(translatedDriver string) string {
+	driverMap := map[string]string{
+		i18n.T("file"):  "file",
+		i18n.T("pass"):  "pass",
+		i18n.T("shell"): "shell",
+	}
+
+	if englishDriver, ok := driverMap[translatedDriver]; ok {
+		return englishDriver
+	}
+
+	// Fallback to original if not found
+	return translatedDriver
 }
 
 func (d *SecretCreateDialog) setFocusElement() {
@@ -411,5 +429,41 @@ func (d *SecretCreateDialog) setFocusElement() {
 		d.focusElement = secretDriverOptionsFocus
 	case secretDriverOptionsFocus:
 		d.focusElement = secretFormFocus
+	}
+}
+
+// UpdateLanguage updates all translatable text in the dialog.
+func (d *SecretCreateDialog) UpdateLanguage() {
+	// Update dialog title
+	d.layout.SetTitle(i18n.T("PODMAN SECRET CREATE"))
+	
+	// Update field labels
+	d.secretName.SetLabel(utils.StringToInputLabel(i18n.T("name:"), labelWidth))
+	d.secretFile.SetLabel(utils.StringToInputLabel(i18n.T("secret file:"), labelWidth))
+	d.secretText.SetLabel(utils.StringToInputLabel(i18n.T("secret text:"), labelWidth))
+	d.secretLabels.SetLabel(utils.StringToInputLabel(i18n.T("labels:"), labelWidth))
+	d.secretReplace.SetLabel(i18n.T("replace") + " ")
+	d.secretDriver.SetLabel(i18n.T("driver:"))
+	d.secretDriverOptions.SetLabel(i18n.T("driver options:") + " ")
+	
+	// Update driver dropdown options
+	currentOption, _ := d.secretDriver.GetCurrentOption()
+	d.secretDriver.SetOptions([]string{i18n.T("file"), i18n.T("pass"), i18n.T("shell")}, nil)
+	d.secretDriver.SetCurrentOption(currentOption)
+	
+	// Update form buttons
+	d.form.ClearButtons()
+	d.form.AddButton(i18n.T("Cancel"), nil)
+	d.form.AddButton(i18n.T("Create"), nil)
+	
+	// Re-set button handlers
+	if d.cancelHandler != nil {
+		cancelButton := d.form.GetButton(d.form.GetButtonCount() - 2) //nolint:mnd
+		cancelButton.SetSelectedFunc(d.cancelHandler)
+	}
+	
+	if d.createHandler != nil {
+		createButton := d.form.GetButton(d.form.GetButtonCount() - 1)
+		createButton.SetSelectedFunc(d.createHandler)
 	}
 }

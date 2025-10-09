@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/ui/style"
 	"github.com/containers/podman-tui/ui/utils"
 	"github.com/docker/go-units"
@@ -34,7 +35,9 @@ func (cnt *Containers) refresh(maxWidth int) {
 	rowIndex := 1
 	cntList := cnt.getData()
 
-	cnt.table.SetTitle(fmt.Sprintf("[::b]%s[%d]", strings.ToUpper(cnt.title), len(cntList)))
+	// Translate title for display
+	translatedTitle := i18n.T(cnt.title)
+	cnt.table.SetTitle(fmt.Sprintf("[::b]%s[%d]", strings.ToUpper(translatedTitle), len(cntList)))
 
 	for i := range cntList {
 		cntID := cntList[i].ID
@@ -44,13 +47,13 @@ func (cnt *Containers) refresh(maxWidth int) {
 
 		cntImage := cntList[i].Image
 		cntPodName := cntList[i].PodName
-		cntCreated := units.HumanDuration(time.Since(cntList[i].Created)) + " ago"
+		duration := units.HumanDuration(time.Since(cntList[i].Created))
+		cntCreated := i18n.TranslateTime(duration) + " " + i18n.T("ago")
 		cntStatus := conReporter{cntList[i]}.status()
 		cntPorts := conReporter{cntList[i]}.ports()
 		cntNames := conReporter{cntList[i]}.names()
 
 		var cellTextColor tcell.Color
-
 		cntShortStatus := strings.Split(strings.ToLower(cntStatus), " ")[0]
 
 		switch cntShortStatus {

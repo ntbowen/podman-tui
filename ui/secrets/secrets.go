@@ -6,6 +6,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/ui/dialogs"
 	"github.com/containers/podman-tui/ui/secrets/secdialogs"
 	"github.com/containers/podman-tui/ui/style"
@@ -23,10 +24,10 @@ const (
 )
 
 var (
-	errNoSecretRemove        = errors.New("there is no secret to remove")
-	errNoSecretInspect       = errors.New("there is no secret to display inspect")
-	errSecretFileAndText     = errors.New("cannot select secret file and secret text together")
-	errEmptySecretFileOrText = errors.New("secret content not provided")
+	errNoSecretRemove        = errors.New(i18n.T("there is no secret to remove"))
+	errNoSecretInspect       = errors.New(i18n.T("there is no secret to display inspect"))
+	errSecretFileAndText     = errors.New(i18n.T("cannot select secret file and secret text together"))
+	errEmptySecretFileOrText = errors.New(i18n.T("secret content not provided"))
 )
 
 // Secrets implements the secrets page primitive.
@@ -59,7 +60,7 @@ func NewSecrets() *Secrets {
 	secrets := &Secrets{
 		Box:            tview.NewBox(),
 		title:          "secrets",
-		headers:        []string{"id", "name", "driver", "created", "updated"},
+		headers:        []string{i18n.T("id"), i18n.T("name"), i18n.T("driver"), i18n.T("created"), i18n.T("updated")},
 		table:          tview.NewTable(),
 		messageDialog:  dialogs.NewMessageDialog(""),
 		errorDialog:    dialogs.NewErrorDialog(),
@@ -69,13 +70,10 @@ func NewSecrets() *Secrets {
 		createDialog:   secdialogs.NewSecretCreateDialog(),
 	}
 
-	secrets.cmdDialog = dialogs.NewCommandDialog([][]string{
-		{"create", "create a new secret"},
-		{"inspect", "inspect a secret"},
-		{"rm", "remove a secret"},
-	})
+	// Build command dialog with translations
+	secrets.buildCommandDialog()
 
-	secrets.table.SetTitle(fmt.Sprintf("[::b]%s[0]", strings.ToUpper(secrets.title)))
+	secrets.table.SetTitle(fmt.Sprintf("[::b]%s[0]", strings.ToUpper(i18n.T(secrets.title))))
 	secrets.table.SetBorderColor(style.BorderColor)
 	secrets.table.SetBackgroundColor(style.BgColor)
 	secrets.table.SetTitleColor(style.FgColor)
@@ -220,4 +218,77 @@ func (s *Secrets) getInnerDialogs() []utils.UIDialog {
 	}
 
 	return dialogs
+}
+
+// buildCommandDialog builds the command dialog with translated strings
+func (s *Secrets) buildCommandDialog() {
+	if s.cmdDialog != nil {
+		s.cmdDialog.Hide()
+	}
+
+	// Translate both command names and descriptions
+	s.cmdDialog = dialogs.NewCommandDialog([][]string{
+		{i18n.T("create"), i18n.T("create a new secret")},
+		{i18n.T("inspect"), i18n.T("inspect a secret")},
+		{i18n.T("rm"), i18n.T("remove a secret")},
+	})
+
+	s.cmdDialog.SetSelectedFunc(func() {
+		s.cmdDialog.Hide()
+		// GetSelectedItem returns translated command, map it back to English
+		translatedCmd := s.cmdDialog.GetSelectedItem()
+		englishCmd := s.getEnglishCommand(translatedCmd)
+		s.runCommand(englishCmd)
+	})
+
+	s.cmdDialog.SetCancelFunc(func() {
+		s.cmdDialog.Hide()
+	})
+}
+
+// getEnglishCommand maps translated command back to English command key
+func (s *Secrets) getEnglishCommand(translatedCmd string) string {
+	// Create reverse mapping from translated to English
+	commandMap := map[string]string{
+		i18n.T("create"):  "create",
+		i18n.T("inspect"): "inspect",
+		i18n.T("rm"):      "rm",
+	}
+
+	if englishCmd, ok := commandMap[translatedCmd]; ok {
+		return englishCmd
+	}
+
+	// Fallback to original if not found (shouldn't happen)
+	return translatedCmd
+}
+
+// UpdateLanguage updates all translatable text when language changes.
+func (s *Secrets) UpdateLanguage() {
+	// Update headers
+	s.headers = []string{i18n.T("id"), i18n.T("name"), i18n.T("driver"), i18n.T("created"), i18n.T("updated")}
+	
+	// Update table header cells
+	for i := range s.headers {
+		header := fmt.Sprintf("[::b]%s", strings.ToUpper(s.headers[i]))
+		s.table.GetCell(0, i).SetText(header)
+	}
+	
+	// Update table title with translation
+	translatedTitle := i18n.T(s.title)
+	s.table.SetTitle(fmt.Sprintf("[::b]%s[%d]", strings.ToUpper(translatedTitle), s.table.GetRowCount()-1))
+	
+	// Rebuild command dialog with new translations
+	s.buildCommandDialog()
+	
+	// Update dialogs
+	s.messageDialog.UpdateLanguage()
+	s.confirmDialog.UpdateLanguage()
+	s.errorDialog.UpdateLanguage()
+	s.createDialog.UpdateLanguage()
+	
+	// Rebuild sort dialog with translated headers
+	s.sortDialog = dialogs.NewSortDialog([]string{i18n.T("name"), i18n.T("driver"), i18n.T("created"), i18n.T("updated")}, 2) //nolint:mnd
+	s.sortDialog.SetCancelFunc(s.sortDialog.Hide)
+	s.sortDialog.SetSelectFunc(s.SortView)
 }

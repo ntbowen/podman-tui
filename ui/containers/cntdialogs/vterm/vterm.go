@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/containers/podman-tui/pdcs/containers"
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/ui/dialogs"
 	"github.com/containers/podman-tui/ui/style"
 	"github.com/containers/podman-tui/ui/utils"
@@ -522,14 +523,14 @@ func (d *VtermDialog) initLayoutUI() {
 	// container information field
 	// label
 	d.containerInfo.SetBackgroundColor(bgColor)
-	d.containerInfo.SetLabel("[::b]" + utils.ContainerIDLabel)
+	d.containerInfo.SetLabel("[::b]" + i18n.T("CONTAINER ID:"))
 	d.containerInfo.SetFieldBackgroundColor(bgColor)
 	d.containerInfo.SetLabelStyle(tcell.StyleDefault.
 		Background(borderColor).
 		Foreground(style.DialogFgColor))
 
 	// form fields
-	d.form.AddButton("Cancel", nil).
+	d.form.AddButton(i18n.T("Cancel"), nil).
 		SetButtonsAlign(tview.AlignRight)
 	d.form.SetBackgroundColor(bgColor)
 	d.form.SetButtonBackgroundColor(style.ButtonBgColor)
@@ -600,4 +601,14 @@ func (d *VtermDialog) writeToStdinSessionWriter(val rune) {
 	if err != nil {
 		log.Error().Msgf("failed to write value %d to vterm session writer rune: %s", val, err.Error())
 	}
+}
+
+// UpdateLanguage updates all labels to current language.
+func (d *VtermDialog) UpdateLanguage() {
+	// Update container ID label
+	d.containerInfo.SetLabel("[::b]" + i18n.T("CONTAINER ID:"))
+
+	// Update form buttons
+	d.form.ClearButtons()
+	d.form.AddButton(i18n.T("Cancel"), nil)
 }

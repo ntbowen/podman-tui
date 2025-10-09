@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/ui/style"
 	"github.com/containers/podman-tui/ui/utils"
 	"github.com/gdamore/tcell/v2"
@@ -47,10 +48,19 @@ const (
 // NewTopDialog returns new TopDialog primitive.
 func NewTopDialog() *TopDialog {
 	dialog := &TopDialog{
-		Box:          tview.NewBox(),
-		info:         tview.NewInputField(),
-		tableHeaders: []string{"user", "pid", "ppid", "%cpu", "elapsed", "tty", "time", "command"},
-		display:      false,
+		Box:     tview.NewBox(),
+		info:    tview.NewInputField(),
+		display: false,
+	}
+	dialog.tableHeaders = []string{
+		i18n.T("user"),
+		i18n.T("pid"),
+		i18n.T("ppid"),
+		i18n.T("%cpu"),
+		i18n.T("elapsed"),
+		i18n.T("tty"),
+		i18n.T("time"),
+		i18n.T("command"),
 	}
 	dialog.table = tview.NewTable()
 	dialog.table.SetBackgroundColor(style.DialogBgColor)
@@ -65,7 +75,7 @@ func NewTopDialog() *TopDialog {
 		Foreground(style.DialogFgColor))
 
 	dialog.form = tview.NewForm().
-		AddButton("Cancel", nil).
+		AddButton(i18n.T("Cancel"), nil).
 		SetButtonsAlign(tview.AlignRight)
 	dialog.form.SetBackgroundColor(style.DialogBgColor)
 	dialog.form.SetButtonBackgroundColor(style.ButtonBgColor)
@@ -92,7 +102,7 @@ func NewTopDialog() *TopDialog {
 
 // SetTitle sets title for the dialog.
 func (d *TopDialog) SetTitle(title string) {
-	d.layout.SetTitle(strings.ToUpper(title))
+	d.layout.SetTitle(i18n.T(title))
 }
 
 // Display displays this primitive.
@@ -188,15 +198,37 @@ func (d *TopDialog) SetCancelFunc(handler func()) *TopDialog {
 	return d
 }
 
+// UpdateLanguage updates all text to current language.
+func (d *TopDialog) UpdateLanguage() {
+	// Update table headers
+	d.tableHeaders = []string{
+		i18n.T("user"),
+		i18n.T("pid"),
+		i18n.T("ppid"),
+		i18n.T("%cpu"),
+		i18n.T("elapsed"),
+		i18n.T("tty"),
+		i18n.T("time"),
+		i18n.T("command"),
+	}
+	
+	// Update form buttons
+	d.form.ClearButtons()
+	d.form.AddButton(i18n.T("Cancel"), d.cancelHandler)
+	
+	// Reinitialize table with new headers
+	d.initTable()
+}
+
 // UpdateResults updates result table.
 func (d *TopDialog) UpdateResults(infoType topInfo, id string, name string, data [][]string) {
-	headerInfo := utils.ContainerIDLabel
+	headerInfo := i18n.T("CONTAINER ID:")
 	if infoType == TopPodInfo {
-		headerInfo = "POD ID:"
+		headerInfo = i18n.T("POD ID:")
 	}
 
 	d.info.SetLabel("[b::b]" + headerInfo)
-	d.info.SetLabelWidth(len(headerInfo))
+	d.info.SetLabelWidth(i18n.GetDisplayWidth(headerInfo))
 
 	infoMessage := fmt.Sprintf("%12s (%s)", id, name)
 	infoMessage = utils.LabelWidthLeftPadding(infoMessage, 1)

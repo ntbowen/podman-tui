@@ -3,6 +3,7 @@ package dialogs
 import (
 	"fmt"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/ui/style"
 	"github.com/containers/podman-tui/ui/utils"
 	"github.com/gdamore/tcell/v2"
@@ -45,7 +46,7 @@ func NewCommandDialog(options [][]string) *CommandDialog {
 	col2Width := 0
 
 	form := tview.NewForm().
-		AddButton("Cancel", nil).
+		AddButton(i18n.T("Cancel"), nil).
 		SetButtonsAlign(tview.AlignRight)
 
 	form.SetBackgroundColor(style.DialogBgColor)
@@ -56,7 +57,7 @@ func NewCommandDialog(options [][]string) *CommandDialog {
 
 	// command table header
 	cmdsTable.SetCell(0, 0,
-		tview.NewTableCell(fmt.Sprintf("[%s::b]COMMAND", style.GetColorHex(style.TableHeaderFgColor))).
+		tview.NewTableCell(fmt.Sprintf("[%s::b]%s", style.GetColorHex(style.TableHeaderFgColor), i18n.T("COMMAND"))).
 			SetExpansion(1).
 			SetBackgroundColor(style.TableHeaderBgColor).
 			SetTextColor(style.TableHeaderFgColor).
@@ -64,7 +65,7 @@ func NewCommandDialog(options [][]string) *CommandDialog {
 			SetSelectable(false))
 
 	cmdsTable.SetCell(0, 1,
-		tview.NewTableCell(fmt.Sprintf("[%s::b]DESCRIPTION", style.GetColorHex(style.TableHeaderFgColor))).
+		tview.NewTableCell(fmt.Sprintf("[%s::b]%s", style.GetColorHex(style.TableHeaderFgColor), i18n.T("DESCRIPTION"))).
 			SetExpansion(1).
 			SetBackgroundColor(style.TableHeaderBgColor).
 			SetTextColor(style.TableHeaderFgColor).

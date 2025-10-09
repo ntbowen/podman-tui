@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/containers/podman-tui/i18n"
 	ppods "github.com/containers/podman-tui/pdcs/pods"
 	"github.com/containers/podman-tui/ui/dialogs"
 	"github.com/containers/podman-tui/ui/style"
@@ -74,7 +75,7 @@ func NewPodStatsDialog() *PodStatsDialog {
 	ddselectedStyle := style.DropDownSelected
 
 	// pod dropdown
-	pddLabel := "POD ID:"
+	pddLabel := i18n.T("POD ID:")
 	labelBgColor := fmt.Sprintf("#%x", style.DialogBorderColor.Hex())
 
 	statsDialog.podDropDown.SetLabel(fmt.Sprintf("[:%s:b]%s[::-]", labelBgColor, pddLabel))
@@ -86,19 +87,19 @@ func NewPodStatsDialog() *PodStatsDialog {
 	statsDialog.podDropDown.SetFieldStyle(style.InputFieldStyle)
 
 	// pod sortby dropdown
-	pddSortByLabel := "SORT BY:"
+	pddSortByLabel := i18n.T("SORT BY:")
 
 	statsDialog.podSortByDropDown.SetLabel(fmt.Sprintf("[:%s:b]%s[::-]", labelBgColor, pddSortByLabel))
-	statsDialog.podSortByDropDown.SetLabelWidth(len(pddSortByLabel) + 1)
+	statsDialog.podSortByDropDown.SetLabelWidth(i18n.GetDisplayWidth(pddSortByLabel) + 1)
 	statsDialog.podSortByDropDown.SetBackgroundColor(style.DialogBgColor)
 	statsDialog.podSortByDropDown.SetLabelColor(style.DialogFgColor)
 	statsDialog.podSortByDropDown.SetListStyles(ddUnselectedStyle, ddselectedStyle)
 	statsDialog.podSortByDropDown.SetFocusedStyle(style.DropDownFocused)
 	statsDialog.podSortByDropDown.SetOptions([]string{
-		"pod ID",
-		"container name",
-		"cpu %",
-		"mem %",
+		i18n.T("pod ID"),
+		i18n.T("container name"),
+		i18n.T("cpu %"),
+		i18n.T("mem %"),
 	}, statsDialog.setStatsQuerySortBy)
 	statsDialog.podSortByDropDown.SetFieldStyle(style.InputFieldStyle)
 
@@ -111,7 +112,7 @@ func NewPodStatsDialog() *PodStatsDialog {
 
 	// form
 	statsDialog.form = tview.NewForm().
-		AddButton("Cancel", nil).
+		AddButton(i18n.T("Cancel"), nil).
 		SetButtonsAlign(tview.AlignRight)
 	statsDialog.form.SetBackgroundColor(style.DialogBgColor)
 	statsDialog.form.SetButtonBackgroundColor(style.ButtonBgColor)
@@ -137,7 +138,7 @@ func NewPodStatsDialog() *PodStatsDialog {
 	statsDialog.layout.SetBorder(true)
 	statsDialog.layout.SetBorderColor(style.BorderColor)
 	statsDialog.layout.SetBackgroundColor(style.DialogBgColor)
-	statsDialog.layout.SetTitle("PODMAN POD STATS")
+	statsDialog.layout.SetTitle(i18n.T("PODMAN POD STATS"))
 
 	statsDialog.layout.AddItem(utils.EmptyBoxSpace(style.DialogBgColor), 1, 0, true)
 	statsDialog.layout.AddItem(statsDialog.controlLayout, 1, 0, true)
@@ -436,7 +437,17 @@ func (d *PodStatsDialog) getAllPodIDs() []string {
 }
 
 func (d *PodStatsDialog) initTableUI() {
-	tableHeaders := []string{"POD ID", "CID", "NAME", "CPU %", "MEM USAGE / LIMIT", "MEM %", "NET IO", "BLOCK IO", "PIDS"}
+	tableHeaders := []string{
+		i18n.T("POD ID"),
+		i18n.T("CID"),
+		i18n.T("NAME"),
+		i18n.T("CPU %"),
+		i18n.T("MEM USAGE / LIMIT"),
+		i18n.T("MEM %"),
+		i18n.T("NET IO"),
+		i18n.T("BLOCK IO"),
+		i18n.T("PIDS"),
+	}
 
 	headerBgColor := style.TableHeaderBgColor
 	headerFgColor := style.TableHeaderFgColor

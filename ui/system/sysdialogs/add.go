@@ -3,6 +3,7 @@ package sysdialogs
 import (
 	"strings"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/ui/dialogs"
 	"github.com/containers/podman-tui/ui/style"
 	"github.com/containers/podman-tui/ui/utils"
@@ -46,31 +47,43 @@ func NewAddConnectionDialog() *AddConnectionDialog {
 		display: false,
 	}
 
-	labelWidth := 10
+	// Calculate label width based on actual display width
+	nameLabel := i18n.T("Name:")
+	uriLabel := i18n.T("URI:")
+	identityLabel := i18n.T("Identity:")
+	
+	labelWidth := i18n.GetDisplayWidth(nameLabel)
+	if w := i18n.GetDisplayWidth(uriLabel); w > labelWidth {
+		labelWidth = w
+	}
+	if w := i18n.GetDisplayWidth(identityLabel); w > labelWidth {
+		labelWidth = w
+	}
+
 	// connection name
 	connDialog.connNameField = tview.NewInputField()
 	connDialog.connNameField.SetBackgroundColor(style.DialogBgColor)
-	connDialog.connNameField.SetLabel(utils.StringToInputLabel("Name:", labelWidth))
+	connDialog.connNameField.SetLabel(utils.StringToInputLabel(nameLabel, labelWidth))
 	connDialog.connNameField.SetFieldStyle(style.InputFieldStyle)
 	connDialog.connNameField.SetLabelStyle(style.InputLabelStyle)
 
 	// connection URI
 	connDialog.connURIField = tview.NewInputField()
-	connDialog.connURIField.SetLabel(utils.StringToInputLabel("URI:", labelWidth))
+	connDialog.connURIField.SetLabel(utils.StringToInputLabel(uriLabel, labelWidth))
 	connDialog.connURIField.SetFieldStyle(style.InputFieldStyle)
 	connDialog.connURIField.SetLabelStyle(style.InputLabelStyle)
 
 	// identity
 	connDialog.identityField = tview.NewInputField()
 	connDialog.identityField.SetBackgroundColor(style.DialogBgColor)
-	connDialog.identityField.SetLabel(utils.StringToInputLabel("Identity:", labelWidth))
+	connDialog.identityField.SetLabel(utils.StringToInputLabel(identityLabel, labelWidth))
 	connDialog.identityField.SetFieldStyle(style.InputFieldStyle)
 	connDialog.identityField.SetLabelStyle(style.InputLabelStyle)
 
 	// form
 	connDialog.form = tview.NewForm().
-		AddButton("Cancel", nil).
-		AddButton(" Add ", nil).
+		AddButton(i18n.T("Cancel"), nil).
+		AddButton(i18n.T(" Add "), nil).
 		SetButtonsAlign(tview.AlignRight)
 	connDialog.form.SetBackgroundColor(style.DialogBgColor)
 	connDialog.form.SetButtonBackgroundColor(style.ButtonBgColor)
@@ -92,7 +105,7 @@ func NewAddConnectionDialog() *AddConnectionDialog {
 
 	connDialog.layout.SetBorder(true)
 	connDialog.layout.SetBorderColor(style.DialogBorderColor)
-	connDialog.layout.SetTitle("ADD NEW SYSTEM CONNECTION")
+	connDialog.layout.SetTitle(i18n.T("ADD NEW SYSTEM CONNECTION"))
 	connDialog.layout.SetBackgroundColor(style.DialogBgColor)
 	connDialog.layout.AddItem(layout, 0, 1, true)
 	connDialog.layout.AddItem(connDialog.form, dialogs.DialogFormHeight, 0, true)

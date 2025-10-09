@@ -1,7 +1,9 @@
 package app
 
 import (
+	"fmt"
 	"os"
+	"strings"
 
 	"github.com/containers/podman-tui/config"
 	"github.com/containers/podman-tui/pdcs/registry"
@@ -91,6 +93,26 @@ func NewApp(name string, version string) *App {
 
 		app.fastRefreshChan <- true
 	})
+	app.system.SetRefreshUIHandler(func() {
+		// Refresh infobar labels with new language
+		app.infoBar.RefreshLabels()
+		// Refresh menu with new language
+		app.refreshMenu()
+		// Refresh help screen with new language
+		app.help.RefreshLabels()
+		// Refresh pods page with new language
+		app.pods.UpdateLanguage()
+		// Refresh containers page with new language
+		app.containers.UpdateLanguage()
+		// Refresh volumes page with new language
+		app.volumes.UpdateLanguage()
+		// Refresh images page with new language
+		app.images.UpdateLanguage()
+		// Refresh networks page with new language
+		app.networks.UpdateLanguage()
+		// Refresh secrets page with new language
+		app.secrets.UpdateLanguage()
+	})
 
 	app.help = help.NewHelp(name, version)
 
@@ -162,7 +184,42 @@ func NewApp(name string, version string) *App {
 	app.pages.AddPage(app.networks.GetTitle(), app.networks, true, false)
 	app.pages.AddPage(app.secrets.GetTitle(), app.secrets, true, false)
 
+	// Initialize all pages with the configured language
+	// This ensures command dialogs and other translatable elements
+	// are built with the correct language from startup
+	app.pods.UpdateLanguage()
+	app.containers.UpdateLanguage()
+	app.volumes.UpdateLanguage()
+	app.images.UpdateLanguage()
+	app.networks.UpdateLanguage()
+	app.secrets.UpdateLanguage()
+
 	return &app
+}
+
+// refreshMenu refreshes the menu with current language
+func (app *App) refreshMenu() {
+	menuItems := [][]string{
+		{utils.HelpScreenKey.Label(), app.help.GetTitle()},
+		{utils.SystemScreenKey.Label(), app.system.GetTitle()},
+		{utils.PodsScreenKey.Label(), app.pods.GetTitle()},
+		{utils.ContainersScreenKey.Label(), app.containers.GetTitle()},
+		{utils.VolumesScreenKey.Label(), app.volumes.GetTitle()},
+		{utils.ImagesScreenKey.Label(), app.images.GetTitle()},
+		{utils.NetworksScreenKey.Label(), app.networks.GetTitle()},
+		{utils.SecretsScreenKey.Label(), app.secrets.GetTitle()},
+	}
+	
+	app.menu.Clear()
+	menuList := []string{}
+	for i := range menuItems {
+		key, item := genMenuItem(menuItems[i])
+		if i == len(menuItems)-1 {
+			item += " "
+		}
+		menuList = append(menuList, key+item)
+	}
+	fmt.Fprintf(app.menu, "%s", strings.Join(menuList, " "))
 }
 
 // Run starts the application loop.

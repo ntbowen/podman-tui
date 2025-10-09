@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/ui/style"
 	"github.com/rivo/tview"
 )
@@ -28,7 +29,7 @@ func (nets *Networks) refresh(_ int) {
 	rowIndex := 1
 	netList := nets.getData()
 
-	nets.table.SetTitle(fmt.Sprintf("[::b]%s[%d]", strings.ToUpper(nets.title), len(netList)))
+	nets.table.SetTitle(fmt.Sprintf("[::b]%s[%d]", strings.ToUpper(i18n.T(nets.title)), len(netList)))
 
 	for _, net := range netList {
 		// name column

@@ -2,8 +2,8 @@ package sysdialogs
 
 import (
 	"fmt"
-	"strings"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/pdcs/sysinfo"
 	"github.com/containers/podman-tui/ui/dialogs"
 	"github.com/containers/podman-tui/ui/style"
@@ -36,16 +36,22 @@ func NewDfDialog() *DfDialog {
 	dialog := &DfDialog{
 		Box:          tview.NewBox(),
 		serviceName:  tview.NewInputField(),
-		tableHeaders: []string{"type", "total", "active", "size", "reclaimable"},
+		tableHeaders: []string{
+			i18n.T("TYPE"),
+			i18n.T("TOTAL"),
+			i18n.T("ACTIVE"),
+			i18n.T("SIZE"),
+			i18n.T("RECLAIMABLE"),
+		},
 		display:      false,
 	}
 
 	// service name input field
-	serviceNameLabel := "SERVICE NAME:"
+	serviceNameLabel := i18n.T("SERVICE NAME:")
 
 	dialog.serviceName.SetBackgroundColor(style.DialogBgColor)
 	dialog.serviceName.SetLabel("[::b]" + serviceNameLabel)
-	dialog.serviceName.SetLabelWidth(len(serviceNameLabel))
+	dialog.serviceName.SetLabelWidth(i18n.GetDisplayWidth(serviceNameLabel))
 	dialog.serviceName.SetFieldBackgroundColor(style.DialogBgColor)
 	dialog.serviceName.SetLabelStyle(tcell.StyleDefault.
 		Background(style.DialogBorderColor).
@@ -60,7 +66,7 @@ func NewDfDialog() *DfDialog {
 	dialog.initTable()
 
 	dialog.form = tview.NewForm().
-		AddButton("Cancel", nil).
+		AddButton(i18n.T("Cancel"), nil).
 		SetButtonsAlign(tview.AlignRight)
 
 	dialog.form.SetBackgroundColor(style.DialogBgColor)
@@ -90,7 +96,7 @@ func NewDfDialog() *DfDialog {
 func (d *DfDialog) SetServiceName(name string) {
 	serviceName := utils.LabelWidthLeftPadding(name, dfDialogLabelPadding)
 
-	d.layout.SetTitle("SYSTEM DISK USAGE")
+	d.layout.SetTitle(i18n.T("SYSTEM DISK USAGE"))
 	d.serviceName.SetText(serviceName)
 }
 
@@ -222,7 +228,7 @@ func (d *DfDialog) initTable() {
 	// add headers
 	for i := range d.tableHeaders {
 		d.table.SetCell(0, i,
-			tview.NewTableCell(fmt.Sprintf("[%s::b]%s", style.GetColorHex(fgColor), strings.ToUpper(d.tableHeaders[i]))).
+			tview.NewTableCell(fmt.Sprintf("[%s::b]%s", style.GetColorHex(fgColor), d.tableHeaders[i])).
 				SetExpansion(1).
 				SetBackgroundColor(bgColor).
 				SetTextColor(fgColor).

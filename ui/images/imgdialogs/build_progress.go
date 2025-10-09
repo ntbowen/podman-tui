@@ -4,6 +4,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/containers/podman-tui/i18n"
 	"github.com/containers/podman-tui/ui/style"
 	"github.com/containers/podman-tui/ui/utils"
 	"github.com/containers/podman/v5/pkg/channel"
@@ -63,7 +64,7 @@ func NewImageBuildProgressDialog() *ImageBuildProgressDialog {
 	buildPrgDialog.layout.SetBackgroundColor(bgColor)
 	buildPrgDialog.layout.SetBorder(true)
 	buildPrgDialog.layout.SetBorderColor(style.DialogBorderColor)
-	buildPrgDialog.layout.SetTitle("PODMAN IMAGE BUILD")
+	buildPrgDialog.layout.SetTitle(i18n.T("PODMAN IMAGE BUILD"))
 	buildPrgDialog.layout.AddItem(buildPrgDialog.progressBar, 3, 0, false) //nolint:mnd
 
 	outputLayout := tview.NewFlex().SetDirection(tview.FlexColumn)
@@ -159,6 +160,12 @@ func (d *ImageBuildProgressDialog) LogWriter() channel.WriteCloser { //nolint:ir
 // fast refresh is used to print image build output as fast as possible.
 func (d *ImageBuildProgressDialog) SetFastRefreshHandler(handler func()) {
 	d.fastRefreshHandler = handler
+}
+
+// UpdateLanguage updates all translatable text in the dialog.
+func (d *ImageBuildProgressDialog) UpdateLanguage() {
+	// Update dialog title
+	d.layout.SetTitle(i18n.T("PODMAN IMAGE BUILD"))
 }
 
 func (d *ImageBuildProgressDialog) outputReaderLoop() {
