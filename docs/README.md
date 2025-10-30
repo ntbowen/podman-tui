@@ -1,3 +1,6 @@
+## Want more languages supprot? Try this one.
+<img width="2082" height="1498" alt="image" src="https://github.com/user-attachments/assets/f7353b6e-3a7d-4b54-bded-fcf0337343b3" />
+
 ## podman-tui
 
 ![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)
